@@ -7,6 +7,12 @@ const api = axios.create({
     },
 });
 
+// Log API configuration for debugging
+console.log('🔌 API Configuration:', {
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    environment: import.meta.env.MODE,
+});
+
 // Add a request interceptor to include the auth token in headers
 api.interceptors.request.use(
     (config) => {
@@ -79,6 +85,21 @@ api.interceptors.request.use(
         return config;
     },
     (error) => {
+        console.error('❌ API Request Error:', error.message);
+        return Promise.reject(error);
+    }
+);
+
+// Add response interceptor for better error handling
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.error('❌ API Response Error:', {
+            status: error.response?.status,
+            message: error.response?.data?.message || error.message,
+            url: error.config?.url,
+            baseURL: error.config?.baseURL,
+        });
         return Promise.reject(error);
     }
 );

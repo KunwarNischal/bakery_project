@@ -13,8 +13,8 @@ const categoryRoutes = require('./routes/categoryRoutes');
 
 const app = express();
 
-// Connect Database
-connectDB();
+// Connect Database (but don't crash if it fails)
+connectDB().catch(err => console.error('Database connection failed:', err));
 
 // Init Middleware
 app.use(express.json({ limit: '50mb' }));
@@ -22,17 +22,32 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // CORS Configuration - Allow frontend to access backend
 const corsOptions = {
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        process.env.FRONTEND_URL || 'http://localhost:3000',
-        /vercel\.app$/
-    ],
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            process.env.FRONTEND_URL || '',
+        ];
+        
+        // Allow all Vercel domains
+        if (!origin || 
+            allowedOrigins.includes(origin) || 
+            origin.includes('vercel.app') ||
+            origin.includes('localhost')) {
+            callback(null, true);
+        } else {
+            callback(null, true); // Allow all origins for now (more permissive)
+        }
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    optionsSuccessStatus: 200,
+    maxAge: 86400
 };
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
 app.use(morgan('dev'));
 
 // Static folders for uploads and assets (if they exist)
@@ -56,18 +71,38 @@ app.get('/', (req, res) => {
     res.json({ 
         status: 'Hatemalo Bakery API Running',
         environment: process.env.NODE_ENV || 'development',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        mongodb: process.env.MONGO_URI || process.env.MONGODB_URI ? 'Configured' : 'Not Configured ⚠️'
     });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(err.status || 500).json({
-        message: err.message || 'Internal Server Error',
-        ...(process.env.NODE_ENV === 'development' && { error: err })
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({
+        message: 'Route not found',
+        path: req.path,
+        method: req.method
     });
 });
+
+// Error handling middleware (must be last)
+app.use((err, req, res, next) => {
+    console.error('Error:', {
+        message: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method
+    });
+    
+    res.status(err.status || 500).json({
+        message: err.message || 'Internal Server Error',
+        status: err.status || 500,
+        ...(process.env.NODE_ENV === 'development' && { error: err.stack })
+    });
+});
+
+// Vercel serverless export
+module.exports = (req, res) => app(req, res);
 
 // Start server only if not in Vercel (Vercel handles this)
 if (require.main === module) {
