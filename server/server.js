@@ -5,16 +5,31 @@ const path = require('path');
 const connectDB = require('./config/db');
 require('dotenv').config();
 
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const productRoutes = require('./routes/productRoutes');
-const orderRoutes = require('./routes/orderRoutes');
-const categoryRoutes = require('./routes/categoryRoutes');
+// Import routes with error handling
+let authRoutes, productRoutes, orderRoutes, categoryRoutes;
+
+try {
+    authRoutes = require('./routes/authRoutes');
+    productRoutes = require('./routes/productRoutes');
+    orderRoutes = require('./routes/orderRoutes');
+    categoryRoutes = require('./routes/categoryRoutes');
+    console.log('✅ All routes loaded successfully');
+} catch (err) {
+    console.error('❌ Error loading routes:', err.message);
+    authRoutes = (req, res) => res.json({ error: 'Routes not loaded' });
+    productRoutes = (req, res) => res.json({ error: 'Routes not loaded' });
+    orderRoutes = (req, res) => res.json({ error: 'Routes not loaded' });
+    categoryRoutes = (req, res) => res.json({ error: 'Routes not loaded' });
+}
 
 const app = express();
 
 // Connect Database (but don't crash if it fails)
-connectDB().catch(err => console.error('Database connection failed:', err));
+console.log('🔍 Attempting database connection...');
+console.log('📍 MONGO_URI:', process.env.MONGO_URI ? 'Set' : '❌ NOT SET');
+connectDB().catch(err => {
+    console.error('⚠️ Database connection failed:', err.message);
+});
 
 // Init Middleware
 app.use(express.json({ limit: '50mb' }));
@@ -68,11 +83,30 @@ app.use('/api/categories', categoryRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
-    res.json({ 
-        status: 'Hatemalo Bakery API Running',
-        environment: process.env.NODE_ENV || 'development',
-        timestamp: new Date().toISOString(),
-        mongodb: process.env.MONGO_URI || process.env.MONGODB_URI ? 'Configured' : 'Not Configured ⚠️'
+    try {
+        res.json({ 
+            status: 'Hatemalo Bakery API Running ✅',
+            environment: process.env.NODE_ENV || 'development',
+            timestamp: new Date().toISOString(),
+            mongodb: process.env.MONGO_URI ? '✅ Configured' : '❌ NOT CONFIGURED - Add MONGO_URI to Vercel env',
+            version: '1.0.0'
+        });
+    } catch (err) {
+        res.json({ error: err.message });
+    }
+});
+
+// API status endpoint for debugging
+app.get('/api/status', (req, res) => {
+    res.json({
+        status: 'Active',
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        environment: {
+            nodeEnv: process.env.NODE_ENV,
+            mongoUri: process.env.MONGO_URI ? 'Set' : 'NOT SET',
+            jwtSecret: process.env.JWT_SECRET ? 'Set' : 'NOT SET'
+        }
     });
 });
 
@@ -87,31 +121,40 @@ app.use((req, res) => {
 
 // Error handling middleware (must be last)
 app.use((err, req, res, next) => {
-    console.error('Error:', {
+    const errorDetails = {
         message: err.message,
         stack: err.stack,
         path: req.path,
-        method: req.method
-    });
+        method: req.method,
+        timestamp: new Date().toISOString()
+    };
     
-    res.status(err.status || 500).json({
+    console.error('🔴 ERROR:', errorDetails);
+    
+    // Send appropriate response
+    const statusCode = err.status || err.statusCode || 500;
+    res.status(statusCode).json({
         message: err.message || 'Internal Server Error',
-        status: err.status || 500,
+        status: statusCode,
+        path: req.path,
         ...(process.env.NODE_ENV === 'development' && { error: err.stack })
     });
 });
 
-// Vercel serverless export
-module.exports = (req, res) => app(req, res);
+// Vercel serverless export (handler for Vercel Functions)
+module.exports = app;
 
-// Start server only if not in Vercel (Vercel handles this)
+// Start server only if not in Vercel (Vercel handles this automatically)
 if (require.main === module) {
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
         console.log(`\n✅ Hatemalo Bakery Server running on port ${PORT}`);
         console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`🗄️  Database: ${process.env.MONGO_URI ? 'MongoDB Connected' : 'MongoDB Not Connected'}\n`);
+        console.log(`🗄️  Database: ${process.env.MONGO_URI ? 'MongoDB URI Set' : '⚠️  MongoDB URI NOT SET'}\n`);
     });
 }
 
-module.exports = app;
+// For Vercel serverless function
+if (process.env.VERCEL) {
+    console.log('🚀 Running on Vercel serverless platform');
+}
