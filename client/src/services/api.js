@@ -85,26 +85,30 @@ api.interceptors.request.use(
 
 // Helper function to get the image URL
 export const getImageUrl = (imagePath) => {
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const backendURL = baseURL.replace('/api', ''); // Remove /api to get base URL
+    
     if (!imagePath) return '/placeholder.png';
     if (imagePath.startsWith('http')) return imagePath;
+    
     // If it's a bakery image path with /assets/bakery/
     if (imagePath.includes('/assets/bakery/')) {
-        return `http://localhost:5000${imagePath}`;
+        return `${backendURL}${imagePath}`;
     }
     // If it's just a filename, assume it's in the bakery folder
     if (!imagePath.includes('/')) {
-        return `http://localhost:5000/assets/bakery/${imagePath}`;
+        return `${backendURL}/assets/bakery/${imagePath}`;
     }
     // If it starts with /assets/, serve from backend
     if (imagePath.startsWith('/assets/')) {
-        return `http://localhost:5000${imagePath}`;
+        return `${backendURL}${imagePath}`;
     }
     // If it starts with /uploads/, serve from backend uploads
     if (imagePath.startsWith('/uploads/')) {
-        return `http://localhost:5000${imagePath}`;
+        return `${backendURL}${imagePath}`;
     }
     // Default: assume it's a bakery asset
-    return `http://localhost:5000/assets/bakery/${imagePath}`;
+    return `${backendURL}/assets/bakery/${imagePath}`;
 };
 
 export default api;
