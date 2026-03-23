@@ -1,33 +1,50 @@
-import React from 'react';
+/**
+ * Products Management Page Component
+ *
+ * This page allows admins to manage all bakery products.
+ * Features include:
+ * - View all products in a table format
+ * - Search products by name
+ * - Filter by stock status (all, low, out of stock)
+ * - Edit existing products
+ * - Delete products with confirmation
+ * - Add new products button
+ * - Pagination with "Show More" button
+ * - Product details: name, category, price, stock status
+ */
+
+import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Search, Package, X } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
-import { getImageUrl } from '../../services/api';
-import { useSearchAndFilter } from '../../hooks/useSearchAndFilter';
+import { getImageUrl, PLACEHOLDER_IMAGE } from '../../services/api';
 
 const ProductsManagement = () => {
+  // Get context data from parent AdminLayout
   const context = useOutletContext();
-  
-  // Call hooks before any conditional returns
-  const { searchTerm, setSearchTerm, filters, setFilter, filteredItems } = useSearchAndFilter(
-    context?.products || [],
-    (item, search, filters) => {
-      const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
-      const matchesStock = filters.stock === 'all'
-        ? true
-        : filters.stock === 'low'
-          ? (item.stock > 0 && item.stock <= 10)
-          : filters.stock === 'out'
-            ? item.stock === 0
-            : item.stock > 10;
-      return matchesSearch && matchesStock;
-    },
-    { stock: context?.stockFilter || 'all' }
-  );
+  // Search input for filtering products
+  const [searchTerm, setSearchTerm] = useState('');
+  // Stock filter: all, low (1-10), out (0)
+  const [stockFilter, setStockFilter] = useState(context?.stockFilter || 'all');
+  const products = context?.products || [];
+
+  // Filter products by search term and stock status
+  const filteredItems = products.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStock = stockFilter === 'all'
+      ? true
+      : stockFilter === 'low'
+        ? (item.stock > 0 && item.stock <= 10)  // Low stock items
+        : stockFilter === 'out'
+          ? item.stock === 0  // Out of stock items
+          : item.stock > 10;  // In stock items
+    return matchesSearch && matchesStock;
+  });
 
   if (!context) {
     return <div>Loading...</div>;
   }
 
+  // Get functions from parent context
   const {
     showAllProducts,
     setShowAllProducts,
@@ -39,10 +56,10 @@ const ProductsManagement = () => {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-dark-brown">Products Management</h1>
         <div className="flex items-center gap-4">
-          {filters.stock !== 'all' && (
+          {stockFilter !== 'all' && (
             <div className="flex items-center gap-2 px-4 py-2 bg-light-brown/10 text-light-brown rounded-xl border border-light-brown/20 animate-in fade-in zoom-in">
-              <span className="text-xs font-black uppercase tracking-widest">Filter: {filters.stock}</span>
-              <button onClick={() => setFilter('stock', 'all')} className="hover:bg-light-brown hover:text-white rounded-full p-0.5 transition-colors">
+              <span className="text-xs font-black uppercase tracking-widest">Filter: {stockFilter}</span>
+              <button onClick={() => setStockFilter('all')} className="hover:bg-light-brown hover:text-white rounded-full p-0.5 transition-colors">
                 <X size={14} />
               </button>
             </div>
@@ -83,7 +100,7 @@ const ProductsManagement = () => {
                 <td colSpan="5" className="p-12 text-center text-gray-400">
                   <div className="flex flex-col items-center gap-2">
                     <Package size={40} className="text-gray-200" />
-                    <p>{searchTerm ? `No products matching "${searchTerm}"` : filters.stock !== 'all' ? `No ${filters.stock} stock items found.` : 'No products found. Start by adding one!'}</p>
+                    <p>{searchTerm ? `No products matching "${searchTerm}"` : stockFilter !== 'all' ? `No ${stockFilter} stock items found.` : 'No products found. Start by adding one!'}</p>
                   </div>
                 </td>
               </tr>
@@ -97,7 +114,7 @@ const ProductsManagement = () => {
                           src={getImageUrl(product.image)}
                           alt={product.name}
                           className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          onError={(e) => { e.target.src = '/placeholder.png'; }}
+                          onError={(e) => { e.target.onerror = null; e.target.src = PLACEHOLDER_IMAGE; }}
                         />
                       </div>
                       <div>

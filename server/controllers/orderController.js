@@ -1,9 +1,4 @@
 const Order = require('../models/Order');
-const { generateOrderNumber } = require('../utils/orderNumberGenerator');
-
-// @desc    Update order status (generic)
-// @route   PUT /api/orders/:id/status
-// @access  Private/Admin
 const updateOrderStatus = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);
@@ -24,9 +19,6 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
-// @desc    Create new order
-// @route   POST /api/orders
-// @access  Private (can be guest or logged-in user)
 const addOrderItems = async (req, res) => {
     try {
         const {
@@ -38,17 +30,14 @@ const addOrderItems = async (req, res) => {
             deliveryFee,
         } = req.body;
 
-        console.log('Creating order for user:', req.user ? req.user._id : 'Guest');
-
         if (orderItems && orderItems.length === 0) {
             res.status(400).json({ message: 'No order items' });
             return;
         } else {
-            // Generate production-style order number
             const orderNumber = await generateOrderNumber();
 
             const order = new Order({
-                userId: req.user ? req.user._id : null, // Link to user if logged in
+                userId: req.user ? req.user._id : null,
                 orderNumber,
                 orderItems,
                 customerDetails,
@@ -59,24 +48,17 @@ const addOrderItems = async (req, res) => {
             });
 
             const createdOrder = await order.save();
-            console.log('Order created with userId:', createdOrder.userId);
 
             res.status(201).json(createdOrder);
         }
     } catch (error) {
-        console.error('Order creation error:', error);
         res.status(500).json({ message: error.message });
     }
 };
 
-// @desc    Get logged in user orders
-// @route   GET /api/orders/myorders
-// @access  Private
 const getMyOrders = async (req, res) => {
     try {
-        console.log('Fetching orders for user:', req.user._id, 'email:', req.user.email);
         
-        // Find orders by userId OR by customer email (for backward compatibility with orders that don't have userId)
         const orders = await Order.find({
             $or: [
                 { userId: req.user._id },
@@ -84,7 +66,6 @@ const getMyOrders = async (req, res) => {
             ]
         }).sort({ createdAt: -1 });
         
-        console.log('Found', orders.length, 'orders for user');
         res.json(orders);
     } catch (error) {
         console.error('Error fetching myorders:', error);
@@ -92,9 +73,6 @@ const getMyOrders = async (req, res) => {
     }
 };
 
-// @desc    Get all orders
-// @route   GET /api/orders
-// @access  Private/Admin
 const getOrders = async (req, res) => {
     try {
         const orders = await Order.find({}).sort({ createdAt: -1 });
@@ -104,9 +82,6 @@ const getOrders = async (req, res) => {
     }
 };
 
-// @desc    Update order to delivered
-// @route   PUT /api/orders/:id/deliver
-// @access  Private/Admin
 const updateOrderToDelivered = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);
@@ -123,9 +98,6 @@ const updateOrderToDelivered = async (req, res) => {
     }
 };
 
-// @desc    Update order to preparing
-// @route   PUT /api/orders/:id/prepare
-// @access  Private/Admin
 const updateOrderToPreparing = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);
@@ -142,9 +114,6 @@ const updateOrderToPreparing = async (req, res) => {
     }
 };
 
-// @desc    Delete an order
-// @route   DELETE /api/orders/:id
-// @access  Private/Admin
 const deleteOrder = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);
@@ -160,6 +129,20 @@ const deleteOrder = async (req, res) => {
     }
 };
 
+const generateOrderNumber = async () => {
+    try {
+        const totalOrders = await Order.countDocuments({});
+
+        const orderNumber = `HMB-${totalOrders + 1}`;
+
+        return orderNumber;
+    } catch (error) {
+        console.error('Error generating order number:', error);
+        throw new Error('Failed to generate order number');
+    }
+};
+
+
 module.exports = {
     addOrderItems,
     getOrders,
@@ -168,4 +151,5 @@ module.exports = {
     getMyOrders,
     deleteOrder,
     updateOrderStatus,
+    generateOrderNumber
 };

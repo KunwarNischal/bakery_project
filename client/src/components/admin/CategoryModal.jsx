@@ -1,3 +1,15 @@
+/**
+ * CategoryModal Component - Modal for creating and editing product categories
+ *
+ * Features:
+ * - Form to input category name
+ * - Works in both "create new" and "edit existing" modes
+ * - Cancel button to close without saving
+ * - Submit button to create or update category
+ * - Close button (X) in top-right corner
+ * - Form validation (required field)
+ */
+
 import React from 'react';
 import { X, Plus, Edit } from 'lucide-react';
 
@@ -12,12 +24,20 @@ const CategoryModal = ({
   setEditingCategory,
   handleCategorySubmit
 }) => {
+  // Don't render modal if not open
   if (!isOpen) return null;
 
+  /**
+   * Close the modal and reset all edit-related states
+   */
   const handleClose = () => {
+    // Close the modal
     setIsCategoryModalOpen(false);
+    // Exit edit mode
     setIsCategoryEdit(false);
+    // Clear the editing category
     setEditingCategory(null);
+    // Clear the form input
     setNewCategory('');
   };
 
@@ -79,3 +99,4 @@ const CategoryModal = ({
 };
 
 export default CategoryModal;
+

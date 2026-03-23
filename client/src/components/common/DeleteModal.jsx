@@ -1,7 +1,20 @@
+/**
+ * DeleteModal Component - Confirmation dialog for delete/removal operations
+ *
+ * Features:
+ * - Modal overlay with backdrop
+ * - Trash icon and warning styling
+ * - Customizable title and message
+ * - "No, Keep it" and "Yes, Delete" buttons
+ * - Close button (X) in top-right corner
+ * - Animated entrance
+ */
+
 import React from 'react';
 import { AlertCircle, Trash2, X } from 'lucide-react';
 
 const DeleteModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+    // Don't render modal if not open
     if (!isOpen) return null;
 
     return (
@@ -41,7 +54,6 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, title, message }) => {
                     </div>
                 </div>
 
-                {/* Close Button */}
                 <button
                     onClick={onClose}
                     className="absolute top-6 right-6 p-2 text-gray-400 hover:text-dark-brown hover:bg-gray-100 rounded-full transition-all"
@@ -54,3 +66,4 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 export default DeleteModal;
+

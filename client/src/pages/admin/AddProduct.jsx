@@ -1,45 +1,58 @@
+/**
+ * Add New Product Page Component
+ *
+ * This page allows admins to add new bakery products.
+ * Features include:
+ * - Product form with fields: name, category, price, stock, description
+ * - Image upload with preview
+ * - Form validation
+ * - Success/error notifications
+ * - Automatic category selection
+ * - After creation, redirects to Products Management page
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, XCircle } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { useAuthCheck } from '../../hooks/useAuthCheck';
-import { useFetchData } from '../../hooks/useFetchData';
+import { useFetch } from '../../hooks/useFetch';
 
 const AddProduct = () => {
     const navigate = useNavigate();
-    const { isAuthenticated } = useAuthCheck('admin', { redirectTo: '/admin' });
+    // Get refetchProducts function from parent AdminLayout to refresh product list
     const { refetchProducts } = useOutletContext();
+    // Track image upload state
     const [uploading, setUploading] = useState(false);
+    // Store selected image file
     const [image, setImage] = useState(null);
+    // Store image preview URL for UI display
     const [imagePreview, setImagePreview] = useState(null);
 
-    // Form state
+    // Product form fields
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [stock, setStock] = useState('');
     const [description, setDescription] = useState('');
 
-    // Fetch categories using custom hook
-    const { data: categories = [], loading: categoriesLoading } = useFetchData(
-        () => api.get('/categories').then(res => res.data),
-        [],
-        (error) => toast.error('Failed to load categories'),
-        { initialData: [] }
-    );
+    // Fetch all categories from server
+    const { data: categoriesResult, loading: categoriesLoading } = useFetch('/categories');
+    const categories = categoriesResult || [];
 
-    // Set default category when categories load
+    // Auto-select first category when categories load
     useEffect(() => {
         if (categories.length > 0 && !categoryId) {
             setCategoryId(categories[0]._id);
         }
     }, [categories, categoryId]);
 
+    // Handle image file selection and create preview
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setImage(file);
+            // Create preview URL for image display
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result);
@@ -48,14 +61,16 @@ const AddProduct = () => {
         }
     };
 
+    // Handle product creation form submission
     const handleCreateProduct = async (e) => {
         e.preventDefault();
         setUploading(true);
-        
-        // Find the selected category object to get its name
+
+        // Get category name for product
         const selectedCategory = categories.find(cat => cat._id === categoryId);
         const categoryName = selectedCategory?.name || '';
-        
+
+        // Prepare form data for file upload
         const formData = new FormData();
         formData.append('name', name);
         formData.append('price', price);
@@ -63,19 +78,24 @@ const AddProduct = () => {
         formData.append('category', categoryName);
         formData.append('stock', stock);
         formData.append('description', description);
+
+        // Add image if selected
         if (image) {
             formData.append('image', image);
         }
 
         try {
+            // Send product creation request to server
             await api.post('/products', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success('Product Created Successfully!', {
                 style: { borderRadius: '16px', background: '#3d2b1f', color: '#fff' }
             });
-            // Refetch products to update the list
+
+            // Refresh products list in parent component
             await refetchProducts();
+            // Redirect to products management page
             navigate('/admin/products');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to create product');
@@ -102,7 +122,6 @@ const AddProduct = () => {
                 <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
                     <form onSubmit={handleCreateProduct} className="p-8 md:p-12">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* Left Column: Details */}
                             <div className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Product Name</label>
@@ -152,7 +171,6 @@ const AddProduct = () => {
                                 </div>
                             </div>
 
-                            {/* Right Column: Image Upload */}
                             <div className="space-y-6">
                                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Product Image</label>
                                 <div
@@ -218,3 +236,4 @@ const AddProduct = () => {
 };
 
 export default AddProduct;
+

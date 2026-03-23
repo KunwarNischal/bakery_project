@@ -1,10 +1,27 @@
+/**
+ * ProductCard Component - Displays a single product in grid/list view
+ *
+ * Shows:
+ * - Product image or icon
+ * - Product name
+ * - Category badge
+ * - Price
+ * - Quick "Add to Cart" button
+ *
+ * Interactions:
+ * - Click card to view product details
+ * - Click + button to add to cart without leaving current page
+ */
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { formatPrice } from '../../assets/data';
 
 const ProductCard = ({ product, categoryName }) => {
+  // Get function to add products to shopping cart
   const { addToCart } = useCart();
+  // Use navigate hook to redirect to product details page
   const navigate = useNavigate();
 
   return (

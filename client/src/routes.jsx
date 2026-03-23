@@ -1,27 +1,39 @@
+/**
+ * Route Configuration - Defines all application routes
+ *
+ * This file sets up the routing structure for the entire Hatemalo Bakery application:
+ * - Client-facing pages: home, menu, product details, checkout, login/register, orders
+ * - Admin pages: dashboard, products management, orders management, categories management
+ * - Uses code-splitting with lazy loading to optimize performance
+ * - Displays a loading message while routes are being loaded
+ */
+
 import React, { Suspense, lazy, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-const Home = lazy(() => import('../pages/client/Home'));
-const Menu = lazy(() => import('../pages/client/Menu'));
-const ProductDetails = lazy(() => import('../pages/client/ProductDetails'));
-const Contact = lazy(() => import('../pages/client/Contact'));
-const Story = lazy(() => import('../pages/client/Story'));
-const Checkout = lazy(() => import('../pages/client/Checkout'));
-const MyOrders = lazy(() => import('../pages/client/MyOrders'));
-const AdminLayout = lazy(() => import('../layout/AdminLayout'));
-const AdminLogin = lazy(() => import('../pages/admin/AdminLogin'));
-const CustomerLogin = lazy(() => import('../pages/client/CustomerLogin'));
-const CustomerRegister = lazy(() => import('../pages/client/CustomerRegister'));
-const AddProduct = lazy(() => import('../pages/admin/AddProduct'));
-const EditProduct = lazy(() => import('../pages/admin/EditProduct'));
-const Dashboard = lazy(() => import('../pages/admin/Dashboard'));
-const ProductsManagement = lazy(() => import('../pages/admin/ProductsManagement'));
-const OrdersManagement = lazy(() => import('../pages/admin/OrdersManagement'));
-const CategoriesManagement = lazy(() => import('../pages/admin/CategoriesManagement'));
+const Home = lazy(() => import('./pages/client/Home'));
+const Menu = lazy(() => import('./pages/client/Menu'));
+const ProductDetails = lazy(() => import('./pages/client/ProductDetails'));
+const Contact = lazy(() => import('./pages/client/Contact'));
+const Story = lazy(() => import('./pages/client/Story'));
+const Checkout = lazy(() => import('./pages/client/Checkout'));
+const MyOrders = lazy(() => import('./pages/client/MyOrders'));
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const CustomerLogin = lazy(() => import('./pages/client/CustomerLogin'));
+const CustomerRegister = lazy(() => import('./pages/client/CustomerRegister'));
+const AddProduct = lazy(() => import('./pages/admin/AddProduct'));
+const EditProduct = lazy(() => import('./pages/admin/EditProduct'));
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
+const ProductsManagement = lazy(() => import('./pages/admin/ProductsManagement'));
+const OrdersManagement = lazy(() => import('./pages/admin/OrdersManagement'));
+const CategoriesManagement = lazy(() => import('./pages/admin/CategoriesManagement'));
 
 const AppRoutes = ({ products, categories }) => {
+  // State to track which category is selected from the home page
   const [selectedCategory, setSelectedCategory] = useState(null);
 
+  // Handle category selection from home page and navigate to menu
   const handleCategorySelect = (categoryName) => {
     setSelectedCategory(categoryName);
   };
@@ -40,7 +52,7 @@ const AppRoutes = ({ products, categories }) => {
         <Route path="/register" element={<CustomerRegister />} />
         <Route path="/admin" element={<AdminLogin />} />
         
-        {/* Admin Layout with nested routes */}
+
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/products" element={<ProductsManagement />} />

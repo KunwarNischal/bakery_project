@@ -1,3 +1,15 @@
+/**
+ * Contact Us Page Component
+ *
+ * This page displays bakery contact information and location.
+ * It includes:
+ * - Bakery location address in Dhanusha, Nepal
+ * - Phone number for customer inquiries
+ * - Embedded Google Map showing the bakery location
+ *
+ * This is a simple informational page for customers to find how to reach the bakery.
+ */
+
 import React from 'react';
 
 const Contact = () => {
@@ -26,7 +38,6 @@ const Contact = () => {
         </div>
         
         <div className="aspect-square bg-cardBg rounded-[3rem] border border-primary/5 overflow-hidden shadow-xl">
-           {/* Google Maps Embed Placeholder */}
            <iframe 
              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d57187.39169620456!2d85.91890184863281!3d26.732912499999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39ec401a00000001%3A0xe5a3c9e6e6e6e6e6!2sJanakpur%20Nepal!5e0!3m2!1sen!2snp!4v1710834244567!5m2!1sen!2snp" 
              width="100%" 

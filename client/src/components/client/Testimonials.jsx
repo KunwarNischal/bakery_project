@@ -1,3 +1,14 @@
+/**
+ * Testimonials Component - Displays customer reviews and ratings
+ *
+ * Features:
+ * - Shows customer quotes and reviews
+ * - Displays 5-star ratings for each testimonial
+ * - Shows customer name and role/description
+ * - Responsive grid layout for multiple testimonials
+ * - Highlights the bakery's quality and customer satisfaction
+ */
+
 import React from 'react';
 
 const Testimonials = () => (

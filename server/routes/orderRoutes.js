@@ -9,20 +9,18 @@ const {
     deleteOrder,
     updateOrderStatus
 } = require('../controllers/orderController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, admin } = require('../controllers/authController');
 
-// Public routes (guest or logged in)
 router.route('/')
-    .post(protect, addOrderItems)  // Logged in users can place orders
-    .get(protect, admin, getOrders);  // Only admins can view all orders
+    .post(protect, addOrderItems)
+    .get(protect, admin, getOrders);
 
-// Customer routes
-router.route('/myorders').get(protect, getMyOrders);  // Customers can view their orders
+router.route('/myorders').get(protect, getMyOrders);
 
-// Admin routes
 router.route('/:id/status').put(protect, admin, updateOrderStatus);
 router.route('/:id/deliver').put(protect, admin, updateOrderToDelivered);
 router.route('/:id/prepare').put(protect, admin, updateOrderToPreparing);
 router.route('/:id').delete(protect, admin, deleteOrder);
 
 module.exports = router;
+

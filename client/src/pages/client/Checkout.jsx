@@ -1,18 +1,32 @@
+/**
+ * Checkout Page Component
+ *
+ * This page handles the entire checkout process for customers.
+ * It allows users to:
+ * - Fill in their billing and delivery information
+ * - Choose delivery method (Local Pickup or Hatemalo Delivery)
+ * - Select payment method (Cash on Delivery)
+ * - Review their order summary with costs
+ * - Place their order
+ *
+ * The page validates all form inputs, calculates delivery fees based on order total,
+ * and handles free delivery for orders over ₨ 5000.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { formatPrice } from '../../assets/data';
 import api from '../../services/api';
-import { getCustomerInfo, verifyCustomer } from '../../services/authService';
-import { useFormValidation } from '../../hooks/useFormValidation';
-import { useAuthCheck } from '../../hooks/useAuthCheck';
+import { getCustomerInfo, verifyCustomer } from '../../services/api';
 
 const Checkout = () => {
+  // Get cart data, helper functions from cart context
   const { cart, subtotal, clearCart, addToast } = useCart();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthCheck('customer', { redirectTo: '/login' });
   const customerInfo = getCustomerInfo();
 
+  // Form state to store customer's billing and delivery information
   const [form, setForm] = useState({
     firstName: '',
     country: 'Nepal',
@@ -23,34 +37,56 @@ const Checkout = () => {
     notes: '',
   });
 
+  // Track which form fields have been interacted with (for validation)
   const [touched, setTouched] = useState({});
+  // Delivery method: either 'Local Pickup' or 'Hatemalo Delivery'
   const [deliveryMethod, setDeliveryMethod] = useState('Local Pickup');
+  // Payment method: currently only 'Cash On Delivery' is supported
   const [paymentMethod, setPaymentMethod] = useState('Cash On Delivery');
+  // Track if order is being submitted to prevent double submissions
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Calculate delivery fee: ₨ 0 for local pickup or orders over ₨ 5000, ₨ 300 otherwise
   const isFreeDelivery = subtotal >= 5000;
   const deliveryFee = deliveryMethod === 'Hatemalo Delivery' ? (isFreeDelivery ? 0 : 300) : 0;
   const total = subtotal + deliveryFee;
 
-  // Define validation rules for useFormValidation
-  const { errors, validateForm, validateField, clearErrors } = useFormValidation({
-    firstName: [
-      { required: 'Name is required' },
-      { minLength: { value: 2, message: 'Name must be at least 2 characters' } }
-    ],
-    email: [
-      { required: 'Email is required' },
-      { pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email address' } }
-    ],
-    phone: [
-      { required: 'Phone number is required' },
-      { pattern: { value: /^\d{10}/, message: 'Please enter a valid phone number' } }
-    ],
-    city: [
-      { required: 'City is required' }
-    ]
-  });
+  // Store validation errors for form fields
+  const [errors, setErrors] = useState({});
 
-  // Pre-fill form with customer info if logged in
+  // Validate entire form - checks all required fields
+  const validateForm = (formData) => {
+    let newErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'Name is required';
+    else if (formData.firstName.length < 2) newErrors.firstName = 'Name must be at least 2 characters';
+
+    if (!formData.email) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email address';
+
+    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    else if (!/^\d{10}/.test(formData.phone)) newErrors.phone = 'Please enter a valid phone number';
+
+    if (!formData.city) newErrors.city = 'City is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Validate individual field when user leaves the field (on blur)
+  const validateField = (field, value) => {
+    let errorMsg = '';
+    if (field === 'firstName' && (!value || value.length < 2)) errorMsg = 'Name must be at least 2 characters';
+    if (field === 'email' && (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))) errorMsg = 'Please enter a valid email address';
+    if (field === 'phone' && (!value || !/^\d{10}/.test(value))) errorMsg = 'Please enter a valid phone number';
+    if (field === 'city' && !value) errorMsg = 'City is required';
+
+    setErrors(prev => ({
+      ...prev,
+      [field]: errorMsg
+    }));
+  };
+
+  // Load customer's saved name and email when page loads
   useEffect(() => {
     if (customerInfo) {
       setForm(prev => ({
@@ -59,10 +95,9 @@ const Checkout = () => {
         email: customerInfo.email || ''
       }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Redirect to login if not logged in
+  // Check if customer is logged in when page loads, redirect to login if not
   useEffect(() => {
     const customerInfoData = getCustomerInfo();
     if (!customerInfoData) {
@@ -70,48 +105,48 @@ const Checkout = () => {
       return;
     }
 
-    // Verify customer still exists in database
     if (customerInfoData.token) {
       verifyCustomer(customerInfoData.token).catch(() => {
-        // User deleted from database, redirect to login
         navigate('/login');
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
+  // Update form field with error validation while typing
   const handleFieldChange = (field, value) => {
     setForm({ ...form, [field]: value });
-    // Validate field if already touched
     if (touched[field]) {
       validateField(field, value);
     }
   };
 
+  // Mark field as touched and validate when user leaves the field
   const handleFieldBlur = (field) => {
     setTouched({ ...touched, [field]: true });
     validateField(field, form[field]);
   };
 
+  // Auto-select Hatemalo Delivery when order qualifies for free delivery (over ₨ 5000)
   useEffect(() => {
     if (isFreeDelivery) {
       setDeliveryMethod('Hatemalo Delivery');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFreeDelivery]);
 
+  // Show empty cart message if no items
   if (cart.length === 0 && !isSubmitting) {
     return <div className="p-40 text-center font-display text-3xl">Your cart is empty</div>;
   }
 
+  // Handle order submission - validate form, send to server, and redirect
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate form before submission
+
+    // Validate all form fields
     const isValid = validateForm(form);
-    
+
+    // Show validation errors and scroll to top if form is invalid
     if (!isValid) {
-      // Mark all fields as touched to show errors
       setTouched({
         firstName: true,
         email: true,
@@ -119,8 +154,7 @@ const Checkout = () => {
         city: true,
         street: true
       });
-      
-      // Scroll to top of form to see errors
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -128,6 +162,7 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
+      // Prepare order data with cart items and customer details
       const orderData = {
         orderItems: cart.map(item => ({
           name: item.name,
@@ -149,20 +184,17 @@ const Checkout = () => {
         totalAmount: total,
       };
 
-      console.log('Customer info:', getCustomerInfo()); // Debug: Check if customer is logged in
-      console.log('Submitting order:', orderData); // Debug: Log order data
+      // Send order to server
+      await api.post('/orders', orderData);
 
-      const response = await api.post('/orders', orderData);
-      console.log('Order created:', response.data); // Debug: Log response
-
+      // Clear cart and navigate to orders page on success
       addToast('Order placed successfully!');
       clearCart();
       setIsSubmitting(false);
       navigate('/my-orders');
     } catch (error) {
-      console.error('Checkout error:', error);
+      // Handle errors - redirect to login if session expired
       if (error.response?.status === 401) {
-        console.error('Not authenticated - token may be invalid');
         addToast('Session expired. Please login again.', 'error');
         navigate('/login');
       } else {
@@ -175,20 +207,18 @@ const Checkout = () => {
   return (
     <div className="max-w-7xl mx-auto px-6 py-24 mt-10 animate-fade-in-up font-body text-dark-brown">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Left Column: Billing Details */}
         <div className="lg:col-span-7 space-y-6">
           <h2 className="font-display text-3xl font-bold border-b border-gray-200 pb-4 mb-6">Billing & Delivery</h2>
 
           <div className="space-y-2">
             <label className="text-sm font-bold">Full Name <span className="text-red-500">*</span></label>
-            <input 
-              type="text" 
-              className={`w-full p-3 border rounded focus:outline-none transition-all ${
-                errors.firstName && touched.firstName
+            <input
+              type="text"
+              className={`w-full p-3 border rounded focus:outline-none transition-all ${errors.firstName && touched.firstName
                   ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-300'
                   : 'border-gray-300 focus:ring-2 focus:ring-light-brown focus:border-transparent'
-              }`}
-              value={form.firstName} 
+                }`}
+              value={form.firstName}
               onChange={e => handleFieldChange('firstName', e.target.value)}
               onBlur={() => handleFieldBlur('firstName')}
             />
@@ -206,15 +236,14 @@ const Checkout = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-bold">Street address (optional)</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="House number and street name"
-              className={`w-full p-3 border rounded focus:outline-none transition-all ${
-                errors.street && touched.street
+              className={`w-full p-3 border rounded focus:outline-none transition-all ${errors.street && touched.street
                   ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-300'
                   : 'border-gray-300 focus:ring-2 focus:ring-light-brown'
-              }`}
-              value={form.street} 
+                }`}
+              value={form.street}
               onChange={e => handleFieldChange('street', e.target.value)}
               onBlur={() => handleFieldBlur('street')}
             />
@@ -227,14 +256,13 @@ const Checkout = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-bold">Town / City <span className="text-red-500">*</span></label>
-            <input 
-              type="text" 
-              className={`w-full p-3 border rounded focus:outline-none transition-all ${
-                errors.city && touched.city
+            <input
+              type="text"
+              className={`w-full p-3 border rounded focus:outline-none transition-all ${errors.city && touched.city
                   ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-300'
                   : 'border-gray-300 focus:ring-2 focus:ring-light-brown'
-              }`}
-              value={form.city} 
+                }`}
+              value={form.city}
               onChange={e => handleFieldChange('city', e.target.value)}
               onBlur={() => handleFieldBlur('city')}
             />
@@ -247,15 +275,14 @@ const Checkout = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-bold">Phone <span className="text-red-500">*</span></label>
-            <input 
-              type="tel" 
+            <input
+              type="tel"
               placeholder="e.g. 9841234567 or +977-9841234567"
-              className={`w-full p-3 border rounded focus:outline-none transition-all ${
-                errors.phone && touched.phone
+              className={`w-full p-3 border rounded focus:outline-none transition-all ${errors.phone && touched.phone
                   ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-300'
                   : 'border-gray-300 focus:ring-2 focus:ring-light-brown'
-              }`}
-              value={form.phone} 
+                }`}
+              value={form.phone}
               onChange={e => handleFieldChange('phone', e.target.value)}
               onBlur={() => handleFieldBlur('phone')}
             />
@@ -268,15 +295,14 @@ const Checkout = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-bold">Email address <span className="text-red-500">*</span></label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               placeholder="your@email.com"
-              className={`w-full p-3 border rounded focus:outline-none transition-all ${
-                errors.email && touched.email
+              className={`w-full p-3 border rounded focus:outline-none transition-all ${errors.email && touched.email
                   ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-300'
                   : 'border-gray-300 focus:ring-2 focus:ring-light-brown'
-              }`}
-              value={form.email} 
+                }`}
+              value={form.email}
               onChange={e => handleFieldChange('email', e.target.value)}
               onBlur={() => handleFieldBlur('email')}
             />
@@ -296,7 +322,6 @@ const Checkout = () => {
           </div>
         </div>
 
-        {/* Right Column: Order Summary */}
         <div className="lg:col-span-5 relative">
           <div className="bg-gray-50/50 rounded-2xl p-8 border-2 border-light-brown/20 sticky top-32">
             <div className="flex justify-between items-start mb-6">
@@ -327,7 +352,6 @@ const Checkout = () => {
                   <td className="py-4 text-right font-bold text-dark-brown">₨ {subtotal.toFixed(2)}</td>
                 </tr>
 
-                {/* Delivery Selection & Fee */}
                 <tr className="border-b border-gray-200">
                   <th className="py-4 font-bold text-gray-700 align-top">Delivery</th>
                   <td className="py-4">
@@ -350,13 +374,11 @@ const Checkout = () => {
                   </td>
                 </tr>
 
-                {/* Delivery Fee Line */}
                 <tr className="border-b border-gray-200 bg-gray-50">
                   <th className="py-3 font-bold text-gray-700 text-sm">Delivery Fee</th>
                   <td className="py-3 text-right font-bold text-dark-brown text-sm">₨ {deliveryFee.toFixed(2)}</td>
                 </tr>
 
-                {/* Total */}
                 <tr>
                   <th className="py-6 text-lg font-display font-bold">Total</th>
                   <td className="py-6 text-right text-xl font-display font-bold text-secondary">₨ {total.toFixed(2)}</td>
@@ -379,8 +401,8 @@ const Checkout = () => {
             </p>
 
             <div className="space-y-3">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="w-full py-4 font-bold rounded uppercase tracking-widest text-sm shadow-md transition-colors bg-primary text-white hover:bg-secondary"
               >
                 Place order

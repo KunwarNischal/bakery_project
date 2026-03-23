@@ -1,9 +1,21 @@
+/**
+ * FeaturedProducts Component - Displays 6 featured bakery items on home page
+ *
+ * Features:
+ * - Shows only products marked as "featured"
+ * - Displays a maximum of 6 items in a responsive grid
+ * - Includes a "View Full Collection" button to see all products
+ * - Showcases the bakery's signature items with attractive styling
+ */
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from './ProductCard';
 
 const FeaturedProducts = ({ products, categories }) => {
+  // Use navigate hook for redirecting to menu page
   const navigate = useNavigate();
+  // Filter products to show only featured items, limit to 6
   const featured = products.filter(p => p.featured).slice(0, 6);
   
   return (

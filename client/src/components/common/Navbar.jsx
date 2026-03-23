@@ -1,33 +1,52 @@
+/**
+ * Navbar Component - Main navigation bar for the Hatemalo Bakery website
+ *
+ * Features:
+ * - Logo and branding
+ * - Navigation links (Home, Menu, Story, Contact)
+ * - User authentication UI (Login/Logout buttons)
+ * - User profile dropdown with order history link
+ * - Shopping cart button with item count badge
+ * - Admin access link (only visible to admin users)
+ * - Mobile menu with hamburger toggle
+ * - Responsive design for all screen sizes
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, UserCircle, Package } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
-import { getCustomerInfo, logoutCustomer, verifyCustomer } from '../../services/authService';
+import { getCustomerInfo, logoutCustomer, verifyCustomer } from '../../services/api';
 
 const Navbar = ({ setIsCartOpen }) => {
+  // Get cart data and toast function from cart context
   const { cart, addToast } = useCart();
+  // Get current page location to highlight active nav link
   const location = useLocation();
+  // Navigation utility hook
   const navigate = useNavigate();
+  // State for mobile menu visibility
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // State for user profile dropdown visibility
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [customerInfoState, setCustomerInfoState] = useLocalStorage('customerInfo', null, { sync: true });
-  const [customerInfo, setCustomerInfo] = useState(customerInfoState);
+  // State for current logged-in customer info
+  const [customerInfo, setCustomerInfo] = useState(getCustomerInfo());
+  // Ref to detect clicks outside profile dropdown
   const profileRef = useRef(null);
 
-  // Verify customer on mount to check if user still exists in database
+  // Verify customer session is still valid on component mount
   useEffect(() => {
     const verifyCustomerExistence = async () => {
       const currentCustomerInfo = customerInfo || getCustomerInfo();
       if (currentCustomerInfo && currentCustomerInfo.token) {
-        // Silently verify in background
+        // Check if user session token is still valid
         const verified = await verifyCustomer(currentCustomerInfo.token).catch(() => null);
         if (!verified) {
-          // User not found or token invalid, logout silently
+          // If not valid, log them out
           logoutCustomer();
           setCustomerInfo(null);
-          setCustomerInfoState(null);
         } else {
+          // Update with fresh customer data
           setCustomerInfo(verified);
         }
       }
@@ -35,31 +54,31 @@ const Navbar = ({ setIsCartOpen }) => {
     verifyCustomerExistence();
   }, []);
 
-  // Listen for storage changes (when user logs in from AuthModal)
+  // Listen for authentication changes (login/logout) from other tabs or components
   useEffect(() => {
     const handleStorageChange = () => {
+      // Update customer info when auth status changes
       const updatedInfo = getCustomerInfo();
       setCustomerInfo(updatedInfo);
-      setCustomerInfoState(updatedInfo);
     };
 
-    // Listen for storage changes from other tabs/windows
+    // Listen for storage changes (from other tabs) and custom auth events
     window.addEventListener('storage', handleStorageChange);
-    
-    // Also listen for custom event from AuthModal
     window.addEventListener('authchange', handleStorageChange);
 
     return () => {
+      // Clean up listeners on unmount
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('authchange', handleStorageChange);
     };
   }, []);
 
-  // Toggle menu state
+  // Toggle mobile menu visibility
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  // Close mobile menu
   const closeMenu = () => setIsMenuOpen(false);
 
-  // Close profile dropdown when clicking outside
+  // Close profile dropdown when clicking outside of it
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -72,7 +91,7 @@ const Navbar = ({ setIsCartOpen }) => {
     }
   }, [isProfileOpen]);
 
-  // Disable scroll when menu is open
+  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -82,7 +101,7 @@ const Navbar = ({ setIsCartOpen }) => {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isMenuOpen]);
 
-  // Close menu on escape key
+  // Close mobile menu when Escape key is pressed
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') closeMenu();
@@ -93,17 +112,27 @@ const Navbar = ({ setIsCartOpen }) => {
     }
   }, [isMenuOpen]);
 
+  /**
+   * Handle customer logout - clear session and update UI
+   */
   const handleCustomerLogout = () => {
+    // Clear customer info from storage
     logoutCustomer();
+    // Clear local state
     setCustomerInfo(null);
-    // Dispatch event so other components know about logout
+    // Dispatch custom event to notify other components
     window.dispatchEvent(new Event('authchange'));
+    // Show goodbye message
     addToast('See you soon! 👋');
+    // Close profile dropdown
     setIsProfileOpen(false);
+    // Close mobile menu
     closeMenu();
+    // Redirect to home page
     navigate('/');
   };
 
+  // Navigation links configuration
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Menu', path: '/menu' },
@@ -121,7 +150,6 @@ const Navbar = ({ setIsCartOpen }) => {
         </div>
       </Link>
 
-      {/* Desktop Links */}
       <div className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-primary">
         {navLinks.map(v => (
           <Link key={v.name} to={v.path} className={`hover:text-secondary transition-colors ${location.pathname === v.path ? 'text-secondary font-extrabold' : ''}`}>{v.name}</Link>
@@ -129,13 +157,11 @@ const Navbar = ({ setIsCartOpen }) => {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
-        {/* Actions Button Group */}
         <div className="flex items-center gap-1 md:gap-2">
           {customerInfo?.role === 'admin' && (
             <Link to="/admin" className="p-2 text-primary hover:text-secondary transition-all rounded-lg hover:bg-primary/5">⚙️</Link>
           )}
 
-          {/* Customer Profile Dropdown */}
           {customerInfo && (
             <div ref={profileRef} className="relative">
               <button 
@@ -149,7 +175,6 @@ const Navbar = ({ setIsCartOpen }) => {
               
               {isProfileOpen && (
                 <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl z-50 overflow-hidden border border-gray-100 animate-fade-in-up">
-                  {/* Profile Header */}
                   <div className="bg-gradient-to-r from-light-brown/10 to-secondary/10 px-6 py-5 border-b border-gray-100">
                     <div className="flex flex-col items-center gap-3 text-center">
                       <div className="p-3 bg-light-brown/20 rounded-full text-light-brown">
@@ -162,7 +187,6 @@ const Navbar = ({ setIsCartOpen }) => {
                     </div>
                   </div>
                   
-                  {/* Menu Items */}
                   <div className="py-2">
                     <Link 
                       to="/my-orders" 
@@ -195,7 +219,6 @@ const Navbar = ({ setIsCartOpen }) => {
           </button>
         </div>
 
-        {/* Auth Button (Desktop and Tablet) */}
         <div className="hidden sm:block">
           {!customerInfo && (
             <Link to="/login" className="px-6 py-2 bg-light-brown text-white text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-dark-brown transition-all shadow-md flex items-center gap-2">
@@ -204,7 +227,6 @@ const Navbar = ({ setIsCartOpen }) => {
           )}
         </div>
 
-        {/* Hamburger Toggle */}
         <button 
           onClick={toggleMenu}
           className="md:hidden p-2 text-primary hover:bg-primary/5 rounded-lg transition-all"
@@ -213,10 +235,8 @@ const Navbar = ({ setIsCartOpen }) => {
         </button>
       </div>
 
-      {/* Mobile Menu Dropdown (Drawer) */}
       {isMenuOpen && (
         <>
-          {/* Backdrop for the dropdown drawer as well */}
           <div className="fixed inset-0 top-28 bg-primary/10 backdrop-blur-sm z-40 md:hidden" onClick={closeMenu}></div>
           <div className="fixed top-28 left-0 right-0 bg-background shadow-2xl z-50 md:hidden rounded-b-[2rem] border-b border-primary/5 animate-fade-in-up">
             <div className="px-6 py-10 space-y-4">

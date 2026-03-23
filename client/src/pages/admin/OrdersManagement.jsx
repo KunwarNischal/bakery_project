@@ -1,29 +1,47 @@
+/**
+ * Orders Management Page Component
+ *
+ * This page allows admins to manage all customer orders.
+ * Features include:
+ * - View all orders with detailed information
+ * - Search orders by Order ID or customer name
+ * - Update order status (Pending, Preparing, Shipped, Delivered, Cancelled)
+ * - Delete orders with confirmation
+ * - Display order items and pricing
+ * - Color-coded status indicators
+ * - Expandable order details
+ * - Pagination with "Show More" button
+ */
+
 import React, { useState } from 'react';
 import { Search, ShoppingBag, Trash2, ChevronDown } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { getImageUrl } from '../../services/api';
-import { ORDER_STATUSES } from '../../constants/orderStatus';
-import { updateOrderStatus } from '../../services/orderService';
+import { ORDER_STATUSES } from '../../assets/data';
+import { updateOrderStatus } from '../../services/api';
 import toast from 'react-hot-toast';
-import { useSearchAndFilter } from '../../hooks/useSearchAndFilter';
 
 const OrdersManagement = () => {
+  // Get context data from parent AdminLayout
   const context = useOutletContext();
+  // Track which order is expanded for details
   const [expandedOrderId, setExpandedOrderId] = useState(null);
-  
-  // Call hooks before any conditional returns
-  const { searchTerm, setSearchTerm, filteredItems: filteredOrders } = useSearchAndFilter(
-    context?.orders || [],
-    (item, search) => 
-      (item.orderNumber && item.orderNumber.toLowerCase().includes(search.toLowerCase())) ||
-      item._id.toLowerCase().includes(search.toLowerCase()) ||
-      item.customerDetails?.name?.toLowerCase().includes(search.toLowerCase())
+  // Search input for filtering orders
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const orders = context?.orders || [];
+  // Filter orders by search term (order number, ID, or customer name)
+  const filteredOrders = orders.filter(item =>
+    (item.orderNumber && item.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    item._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.customerDetails?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   if (!context) {
     return <div>Loading...</div>;
   }
 
+  // Get functions from parent context
   const {
     showAllOrders,
     setShowAllOrders,
@@ -31,9 +49,12 @@ const OrdersManagement = () => {
     setOrders
   } = context;
 
+  // Handle order status change (Pending -> Preparing -> Shipped -> Delivered, etc.)
   const handleOrderStatusChange = async (orderId, newStatus) => {
     try {
+      // Update order status on server
       await updateOrderStatus(orderId, newStatus);
+      // Update local state to reflect change immediately
       setOrders(orders => orders.map(o => o._id === orderId ? { ...o, orderStatus: newStatus } : o));
       toast.success('Order status updated!');
     } catch (err) {
@@ -41,6 +62,7 @@ const OrdersManagement = () => {
     }
   };
 
+  // Dropdown component for changing order status
   const OrderStatusDropdown = ({ order, onStatusChange }) => {
     return (
       <select
@@ -48,8 +70,8 @@ const OrdersManagement = () => {
           order.orderStatus === 'Delivered'
             ? 'bg-green-100 text-green-700 border-green-300'
             : order.orderStatus === 'Cancelled'
-            ? 'bg-red-100 text-red-700 border-red-300'
-            : 'bg-orange-100 text-orange-700 border-orange-300'
+              ? 'bg-red-100 text-red-700 border-red-300'
+              : 'bg-orange-100 text-orange-700 border-orange-300'
         }`}
         value={order.orderStatus}
         onChange={e => onStatusChange(order._id, e.target.value)}

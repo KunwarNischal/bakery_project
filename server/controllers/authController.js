@@ -7,7 +7,6 @@ const generateToken = (id) => {
     });
 };
 
-// Verify token and check if user exists
 const verifyToken = (token) => {
     try {
         return jwt.verify(token, process.env.JWT_SECRET);
@@ -16,9 +15,6 @@ const verifyToken = (token) => {
     }
 };
 
-// @desc    Auth user & get token
-// @route   POST /api/auth/login
-// @access  Public
 const authUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -41,9 +37,6 @@ const authUser = async (req, res) => {
     }
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
 const registerUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -77,9 +70,6 @@ const registerUser = async (req, res) => {
     }
 };
 
-// @desc    Verify user token and check if user exists
-// @route   POST /api/auth/verify
-// @access  Public
 const verifyUser = async (req, res) => {
     try {
         const { token } = req.body;
@@ -112,8 +102,47 @@ const verifyUser = async (req, res) => {
     }
 };
 
+const protect = async (req, res, next) => {
+    let token;
+
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            req.user = await User.findById(decoded.id).select('-password');
+            if (!req.user) {
+                return res.status(401).json({ message: 'User not found' });
+            }
+            return next();
+        } catch (error) {
+            console.error('Token verification error:', error.message);
+            return res.status(401).json({ message: 'Not authorized, token failed' });
+        }
+    }
+
+    if (!token) {
+        return res.status(401).json({ message: 'Not authorized, no token' });
+    }
+};
+
+
+
+const admin = (req, res, next) => {
+    if (req.user && req.user.isAdmin) {
+        next();
+    } else {
+        res.status(401).json({ message: 'Not authorized as an admin' });
+    }
+};
+
 module.exports = {
     authUser,
     registerUser,
     verifyUser,
+    protect,
+    admin
 };

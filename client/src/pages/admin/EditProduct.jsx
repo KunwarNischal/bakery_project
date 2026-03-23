@@ -1,72 +1,78 @@
+/**
+ * Edit Product Page Component
+ *
+ * This page allows admins to edit existing bakery products.
+ * Features include:
+ * - Pre-filled form with current product details
+ * - Update product name, category, price, stock, description
+ * - Update product image
+ * - Image preview with ability to replace
+ * - Form validation
+ * - Success/error notifications
+ * - After update, redirects to Products Management page
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, XCircle, Loader2 } from 'lucide-react';
-import api, { getImageUrl } from '../../services/api';
+import api, { getImageUrl, PLACEHOLDER_IMAGE } from '../../services/api';
+import { useFetch } from '../../hooks/useFetch';
 import toast from 'react-hot-toast';
-import { useAuthCheck } from '../../hooks/useAuthCheck';
-import { useFetchData } from '../../hooks/useFetchData';
 
 const EditProduct = () => {
+    // Get product ID from URL parameters
     const { id } = useParams();
     const navigate = useNavigate();
-    const { isAuthenticated } = useAuthCheck('admin', { redirectTo: '/admin' });
+    // Get refetchProducts function from parent AdminLayout
     const { refetchProducts } = useOutletContext();
-
-    // UI states
+    // Track upload state
     const [uploading, setUploading] = useState(false);
 
-    // Form state
+    // Product form fields state
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [stock, setStock] = useState('');
     const [description, setDescription] = useState('');
+    // Store selected image file
     const [image, setImage] = useState(null);
+    // Store image preview URL
     const [imagePreview, setImagePreview] = useState(null);
 
-    // Fetch categories using custom hook
-    const { data: categories = [], loading: categoriesLoading } = useFetchData(
-        () => api.get('/categories').then(res => res.data),
-        [],
-        (error) => toast.error('Failed to load categories'),
-        { initialData: [] }
-    );
+    // Fetch categories and product data from server
+    const { data: categoriesData } = useFetch('/categories');
+    const { data: fetchedProduct, loading: productLoading, error: productError } = useFetch(`/products/${id}`);
+    const categories = categoriesData || [];
 
-    // Fetch product details using custom hook
-    const { data: productData, loading: productLoading, error: productError } = useFetchData(
-        () => api.get(`/products/${id}`).then(res => res.data),
-        [id],
-        (error) => toast.error('Failed to load product details'),
-        { initialData: null }
-    );
-
-    // Update form state when product data loads
+    // Pre-fill form when product data is loaded
     useEffect(() => {
-        if (productData) {
-            setName(productData.name);
-            setPrice(productData.price);
-            // Handle both categoryId and category name from backend
-            if (productData.categoryId) {
-                setCategoryId(productData.categoryId);
-            } else if (productData.category) {
-                // If backend returns category name, find the matching ID
-                const foundCategory = categories.find(cat => cat.name === productData.category);
+        if (fetchedProduct) {
+            setName(fetchedProduct.name);
+            setPrice(fetchedProduct.price);
+            // Match category by ID or name
+            if (fetchedProduct.categoryId) {
+                setCategoryId(fetchedProduct.categoryId);
+            } else if (fetchedProduct.category) {
+                const foundCategory = categories.find(cat => cat.name === fetchedProduct.category);
                 if (foundCategory) {
                     setCategoryId(foundCategory._id);
                 }
             }
-            setStock(productData.stock);
-            setDescription(productData.description);
-            if (productData.image) {
-                setImagePreview(getImageUrl(productData.image));
+            setStock(fetchedProduct.stock);
+            setDescription(fetchedProduct.description);
+            // Load current product image
+            if (fetchedProduct.image) {
+                setImagePreview(getImageUrl(fetchedProduct.image));
             }
         }
-    }, [productData, categories]);
+    }, [fetchedProduct, categories]);
 
+    // Handle image file selection and create preview
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setImage(file);
+            // Create preview URL for image display
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result);
@@ -75,14 +81,14 @@ const EditProduct = () => {
         }
     };
 
+    // Handle product update form submission
     const handleUpdateProduct = async (e) => {
         e.preventDefault();
         setUploading(true);
-        
-        // Find the selected category object to get its name
+        // Get category name for product
         const selectedCategory = categories.find(cat => cat._id === categoryId);
         const categoryName = selectedCategory?.name || '';
-        
+        // Prepare form data for file upload
         const formData = new FormData();
         formData.append('name', name);
         formData.append('price', price);
@@ -90,19 +96,21 @@ const EditProduct = () => {
         formData.append('category', categoryName);
         formData.append('stock', stock);
         formData.append('description', description);
+        // Only append new image if one was selected
         if (image) {
             formData.append('image', image);
         }
-
         try {
+            // Send product update request to server
             await api.put(`/products/${id}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success(`${name} updated successfully!`, {
                 style: { borderRadius: '16px', background: '#3d2b1f', color: '#fff' }
             });
-            // Refetch products to update the list
+            // Refresh products list in parent component
             await refetchProducts();
+            // Redirect to products management page
             navigate('/admin/products');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to update product');
@@ -147,7 +155,6 @@ const EditProduct = () => {
                 <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
                     <form onSubmit={handleUpdateProduct} className="p-8 md:p-12">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* Left Column: Details */}
                             <div className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Product Name</label>
@@ -193,7 +200,6 @@ const EditProduct = () => {
                                 </div>
                             </div>
 
-                            {/* Right Column: Image Upload */}
                             <div className="space-y-6">
                                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Product Image</label>
                                 <div
@@ -201,7 +207,8 @@ const EditProduct = () => {
                                 >
                                     {imagePreview ? (
                                         <>
-                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = PLACEHOLDER_IMAGE; }} />
+
                                             <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                                                 <input
                                                     type="file"
@@ -244,7 +251,7 @@ const EditProduct = () => {
                         </div>
 
                         <div className="mt-12 pt-8 border-t border-gray-100 flex gap-4">
-                            <button type="button" onClick={() => navigate('/admin/dashboard', { state: { activeTab: 'products' } })} className="flex-1 py-4 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-all border border-gray-200 text-center cursor-pointer">
+                            <button type="button" onClick={() => navigate('/admin/products')} className="flex-1 py-4 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-all border border-gray-200 text-center cursor-pointer">
                                 Cancel Updates
                             </button>
                             <button
@@ -263,3 +270,4 @@ const EditProduct = () => {
 };
 
 export default EditProduct;
+

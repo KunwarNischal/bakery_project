@@ -1,14 +1,32 @@
+/**
+ * CategoryQuickLinks Component - Quick navigation to browse products by category
+ *
+ * Features:
+ * - Displays all categories as clickable buttons
+ * - Shows category icon and name
+ * - Navigates to menu page with selected category pre-filtered
+ * - Responsive grid layout (adapts from 2 to 10 columns)
+ * - Hover effects for visual feedback
+ */
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getIconForCategory } from '../../constants/categoryIcons';
+import { getIconForCategory } from '../../assets/data';
 
 const CategoryQuickLinks = ({ categories, onCategorySelect }) => {
+  // Use navigate hook to go to menu page
   const navigate = useNavigate();
 
+  /**
+   * Handle category click - calls parent callback if provided and navigates to menu
+   * @param {string} categoryName - Name of the selected category
+   */
   const handleCategoryClick = (categoryName) => {
+    // Call parent callback to set selected category filter
     if (onCategorySelect) {
       onCategorySelect(categoryName);
     }
+    // Navigate to menu page to show products from this category
     navigate('/menu');
   };
 

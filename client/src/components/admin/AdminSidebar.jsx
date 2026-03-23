@@ -1,16 +1,32 @@
+/**
+ * AdminSidebar Component - Navigation sidebar for admin dashboard
+ *
+ * Features:
+ * - Navigation links to dashboard, products, orders, and categories
+ * - Logout button
+ * - Responsive design (hamburger menu on mobile, sidebar on desktop)
+ * - Highlights current active page
+ * - Logo and branding display
+ */
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BarChart3, Package, ShoppingBag, LogOut, Layers, Menu, X } from 'lucide-react';
 
 const AdminSidebar = ({ setIsMenuOpen, isMenuOpen, handleLogout }) => {
+  // Get current page location to highlight active nav link
   const location = useLocation();
 
+  /**
+   * Check if a navigation path is currently active
+   * @param {string} path - The navigation path to check
+   * @returns {boolean} True if this path is active or is a parent of current path
+   */
   const isActive = (path) => {
-    // Exact match or check if current path starts with the nav path
-    // For products: /admin/products, /admin/products/add, /admin/products/edit/:id all highlight Products
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
+  // Navigation items configuration - displayed in sidebar/menu
   const navItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },
     { path: '/admin/products', label: 'Products', icon: Package },
@@ -18,13 +34,15 @@ const AdminSidebar = ({ setIsMenuOpen, isMenuOpen, handleLogout }) => {
     { path: '/admin/categories', label: 'Categories', icon: Layers }
   ];
 
+  /**
+   * Close mobile menu after navigating
+   */
   const handleNavClick = () => {
     setIsMenuOpen(false);
   };
 
   return (
     <>
-      {/* Mobile Header */}
       <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-[100]">
         <div className="flex items-center gap-2">
           <img src="/logo.png" alt="Logo" className="h-8 w-8 rounded-full object-cover" />
@@ -38,7 +56,6 @@ const AdminSidebar = ({ setIsMenuOpen, isMenuOpen, handleLogout }) => {
         </button>
       </div>
 
-      {/* Sidebar */}
       <div className={`
         w-full md:w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300
         ${isMenuOpen ? 'fixed inset-x-0 top-[57px] bottom-0 z-[90] p-6' : 'hidden md:flex p-6'}
@@ -80,3 +97,4 @@ const AdminSidebar = ({ setIsMenuOpen, isMenuOpen, handleLogout }) => {
 };
 
 export default AdminSidebar;
+

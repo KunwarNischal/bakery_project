@@ -1,17 +1,34 @@
+/**
+ * Main App Component - Root component of the Hatemalo Bakery application
+ *
+ * This component serves as the main container for the entire application. It:
+ * - Sets up the router for navigation between pages
+ * - Initializes the shopping cart context provider
+ * - Manages global state for user, products, and categories
+ * - Provides a layout with navbar, footer, and cart drawer
+ * - Displays toast notifications for user feedback
+ */
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, useLocation } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { Toaster } from 'react-hot-toast';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
-import CartDrawer from './components/drawers/CartDrawer';
-import AppRoutes from './routes/AppRoutes';
+import Navbar from './components/common/Navbar';
+import Footer from './components/common/Footer';
+import CartDrawer from './components/common/CartDrawer';
+
+import AppRoutes from './routes.jsx';
 import { INITIAL_PRODUCTS, CATEGORIES } from './assets/data';
 import { useCart } from './hooks/useCart';
-import { getProducts, getCategories } from './services/productService';
+import { useFetch } from './hooks/useFetch';
 
-// Toast sub-component to use context
+/**
+ * ToastContainer component - Displays notification messages to users
+ * Shows success and error messages in the top-right corner of the screen
+ * Auto-dismisses after 3 seconds
+ */
 const ToastContainer = () => {
+  // Get toast notifications from the cart context to display to user
   const { toasts } = useCart();
   return (
     <div className="fixed top-24 right-6 z-[100] flex flex-col gap-3">
@@ -26,8 +43,15 @@ const ToastContainer = () => {
   );
 };
 
+/**
+ * Layout component - Wraps page content with common UI elements (navbar, footer, cart)
+ * Handles conditional rendering of layout elements based on whether the user is in admin or client section
+ * Manages the display of animations and global styles
+ */
 const Layout = ({ children, setUser, setIsCartOpen, user, isCartOpen }) => {
+  // Get current page location to determine if we're in admin section
   const location = useLocation();
+  // Check if current path is an admin path
   const isAdmin = location.pathname.startsWith('/admin');
 
   return (
@@ -65,24 +89,33 @@ const Layout = ({ children, setUser, setIsCartOpen, user, isCartOpen }) => {
 };
 
 export default function App() {
+  // User authentication state - stores logged-in user info or null if not logged in
   const [user, setUser] = useState(null);
-  const [products, setProducts] = useState(INITIAL_PRODUCTS); // Fallback to static data
-  const [categories, setCategories] = useState(CATEGORIES); // Fallback to static data
+  // Products state - stores all available products from the bakery
+  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  // Categories state - stores all product categories for filtering
+  const [categories, setCategories] = useState(CATEGORIES);
+  // Shopping cart drawer visibility state
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  // Fetch products from backend API
+  const { data: fetchedProducts } = useFetch('/products');
+  // Fetch categories from backend API
+  const { data: fetchedCategories } = useFetch('/categories');
+
+  // Update products state when new products are fetched from API
   useEffect(() => {
-    const fetchData = async () => {
-      const prodData = await getProducts();
-      if (prodData && prodData.length > 0) {
-        setProducts(prodData);
-      }
-      const catData = await getCategories();
-      if (catData && catData.length > 0) {
-        setCategories(catData);
-      }
-    };
-    fetchData();
-  }, []);
+    if (fetchedProducts && fetchedProducts.length > 0) {
+      setProducts(fetchedProducts);
+    }
+  }, [fetchedProducts]);
+
+  // Update categories state when new categories are fetched from API
+  useEffect(() => {
+    if (fetchedCategories && fetchedCategories.length > 0) {
+      setCategories(fetchedCategories);
+    }
+  }, [fetchedCategories]);
 
   return (
     <CartProvider>
@@ -103,3 +136,4 @@ export default function App() {
     </CartProvider>
   );
 }
+

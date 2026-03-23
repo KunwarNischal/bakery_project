@@ -7,8 +7,8 @@ const {
   updateProduct,
   deleteProduct,
 } = require('../controllers/productController');
-const { protect, admin } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
+const { protect, admin } = require('../controllers/authController');
+const upload = require('../config/upload');
 
 router.route('/')
   .get(getProducts)

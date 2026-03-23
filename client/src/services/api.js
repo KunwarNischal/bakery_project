@@ -1,29 +1,20 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: 'http://localhost:5000/api',
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Log API configuration for debugging
-console.log('🔌 API Configuration:', {
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-    environment: import.meta.env.MODE,
-});
-
-// Add a request interceptor to include the auth token in headers
 api.interceptors.request.use(
     (config) => {
         let token = null;
-        
-        // Determine which token to use based on the request URL
+
         const url = config.url || '';
         const isAdminRoute = url.includes('/admin') || url.includes('/products') || url.includes('/categories') || (url.includes('/orders') && !url.includes('/myorders'));
-        
+
         if (isAdminRoute) {
-            // Admin routes: prioritize admin token
             const userInfo = localStorage.getItem('userInfo');
             if (userInfo) {
                 try {
@@ -32,11 +23,9 @@ api.interceptors.request.use(
                         token = adminData.token;
                     }
                 } catch (e) {
-                    console.error('Failed to parse userInfo:', e);
                 }
             }
         } else {
-            // Customer routes: prioritize customer token
             const customerInfo = localStorage.getItem('customerInfo');
             if (customerInfo) {
                 try {
@@ -45,91 +34,132 @@ api.interceptors.request.use(
                         token = customerData.token;
                     }
                 } catch (e) {
-                    console.error('Failed to parse customerInfo:', e);
-                }
-            }
-        }
-        
-        // Fallback: if preferred token not found, try the other type
-        if (!token) {
-            if (isAdminRoute) {
-                // Try customer token as fallback
-                const customerInfo = localStorage.getItem('customerInfo');
-                if (customerInfo) {
-                    try {
-                        const customerData = JSON.parse(customerInfo);
-                        if (customerData.token) {
-                            token = customerData.token;
-                        }
-                    } catch (e) {}
-                }
-            } else {
-                // Try admin token as fallback
-                const userInfo = localStorage.getItem('userInfo');
-                if (userInfo) {
-                    try {
-                        const adminData = JSON.parse(userInfo);
-                        if (adminData.token) {
-                            token = adminData.token;
-                        }
-                    } catch (e) {}
                 }
             }
         }
 
-        // Add token to request headers
+        if (!token) {
+            if (isAdminRoute) {
+                const customerInfo = localStorage.getItem('customerInfo');
+                if (customerInfo) {
+                    try { token = JSON.parse(customerInfo).token; } catch (e) {}
+                }
+            } else {
+                const userInfo = localStorage.getItem('userInfo');
+                if (userInfo) {
+                    try { token = JSON.parse(userInfo).token; } catch (e) {}
+                }
+            }
+        }
+
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
         return config;
     },
-    (error) => {
-        console.error('❌ API Request Error:', error.message);
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Add response interceptor for better error handling
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        console.error('❌ API Response Error:', {
-            status: error.response?.status,
-            message: error.response?.data?.message || error.message,
-            url: error.config?.url,
-            baseURL: error.config?.baseURL,
-        });
-        return Promise.reject(error);
-    }
-);
+export const PLACEHOLDER_IMAGE = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23f3ede8'/%3E%3Cg transform='translate(100%2C100)'%3E%3Crect x='-30' y='-22' width='60' height='44' rx='5' fill='none' stroke='%23c8a882' stroke-width='4'/%3E%3Ccircle cx='0' cy='-2' r='12' fill='none' stroke='%23c8a882' stroke-width='4'/%3E%3Ccircle cx='18' cy='-16' r='4' fill='%23c8a882'/%3E%3C/g%3E%3Ctext x='100' y='145' text-anchor='middle' font-family='sans-serif' font-size='11' fill='%23a0845c'%3ENo Image%3C/text%3E%3C/svg%3E`;
 
-// Helper function to get the image URL
 export const getImageUrl = (imagePath) => {
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    const backendURL = baseURL.replace('/api', ''); // Remove /api to get base URL
-    
-    if (!imagePath) return '/placeholder.png';
-    if (imagePath.startsWith('http')) return imagePath;
-    
-    // If it's a bakery image path with /assets/bakery/
-    if (imagePath.includes('/assets/bakery/')) {
-        return `${backendURL}${imagePath}`;
+    if (!imagePath) return PLACEHOLDER_IMAGE;
+    if (imagePath.startsWith('http') || imagePath.startsWith('data:')) return imagePath;
+
+    const baseUrl = 'http://localhost:5000';
+
+    const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+
+    if (cleanPath.startsWith('/uploads/')) return `${baseUrl}${cleanPath}`;
+    if (cleanPath.startsWith('/assets/')) return `${baseUrl}${cleanPath}`;
+
+    return `${baseUrl}/assets/bakery${cleanPath}`;
+};
+
+export const registerCustomer = async (name, email, password) => {
+    try {
+        const { data } = await api.post('/auth/register', { name, email, password });
+        if (data) localStorage.setItem('customerInfo', JSON.stringify(data));
+        return data;
+    } catch (error) {
+        throw error.response?.data?.message || 'Registration failed';
     }
-    // If it's just a filename, assume it's in the bakery folder
-    if (!imagePath.includes('/')) {
-        return `${backendURL}/assets/bakery/${imagePath}`;
+};
+
+export const loginCustomer = async (email, password) => {
+    try {
+        const { data } = await api.post('/auth/login', { email, password });
+        if (data) localStorage.setItem('customerInfo', JSON.stringify(data));
+        return data;
+    } catch (error) {
+        throw error.response?.data?.message || 'Login failed';
     }
-    // If it starts with /assets/, serve from backend
-    if (imagePath.startsWith('/assets/')) {
-        return `${backendURL}${imagePath}`;
+};
+
+export const verifyCustomer = async (token) => {
+    try {
+        const { data } = await api.post('/auth/verify', { token });
+        if (data) localStorage.setItem('customerInfo', JSON.stringify(data));
+        return data;
+    } catch (error) {
+        localStorage.removeItem('customerInfo');
+        return null;
     }
-    // If it starts with /uploads/, serve from backend uploads
-    if (imagePath.startsWith('/uploads/')) {
-        return `${backendURL}${imagePath}`;
+};
+
+export const logoutCustomer = () => {
+    localStorage.removeItem('customerInfo');
+};
+
+export const getCustomerInfo = () => {
+    const info = localStorage.getItem('customerInfo');
+    return info ? JSON.parse(info) : null;
+};
+
+export const getProducts = async () => {
+    try {
+        const { data } = await api.get('/products');
+        return data.map(p => ({
+            ...p,
+            id: p._id || p.id,
+            image: !p.image?.startsWith('http')
+                ? `http://localhost:5000${p.image?.startsWith('/') ? p.image : `/${p.image}`}`
+                : p.image,
+        }));
+    } catch (error) {
+        return [];
     }
-    // Default: assume it's a bakery asset
-    return `${backendURL}/assets/bakery/${imagePath}`;
+};
+
+export const getProductById = async (id) => {
+    try {
+        const { data } = await api.get(`/products/${id}`);
+        return {
+            ...data,
+            id: data._id || data.id,
+            image: !data.image?.startsWith('http')
+                ? `http://localhost:5000${data.image?.startsWith('/') ? data.image : `/${data.image}`}`
+                : data.image,
+        };
+    } catch (error) {
+        return null;
+    }
+};
+
+export const getCategories = async () => {
+    try {
+        const { data } = await api.get('/categories');
+        return data;
+    } catch (error) {
+        return [];
+    }
+};
+
+export const updateOrderStatus = async (orderId, status) => {
+    const { data } = await api.put(`/orders/${orderId}/status`, { status });
+    return data;
 };
 
 export default api;
+

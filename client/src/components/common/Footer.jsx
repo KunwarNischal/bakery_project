@@ -1,3 +1,12 @@
+/**
+ * Footer Component - Bottom section of the website
+ *
+ * Displays:
+ * - Bakery name and tagline
+ * - Copyright information with current year
+ * - Footer styling consistent with the overall brand
+ */
+
 import React from 'react';
 
 const Footer = () => {

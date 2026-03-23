@@ -1,64 +1,67 @@
+/**
+ * My Orders Page Component
+ *
+ * This page displays all orders placed by the logged-in customer.
+ * Features include:
+ * - View all customer orders with order details
+ * - Search orders by Order ID
+ * - Filter orders by status (Pending, Preparing, Delivered, etc.)
+ * - Show order items, amounts, and delivery information
+ * - Display order status with icons
+ * - Pagination (show 2 orders by default, "Show More" button)
+ * - Requires customer to be logged in
+ *
+ * If not logged in, user is redirected to login page.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Clock, CheckCircle, Truck, ShoppingBag, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
-import api from '../../services/api';
-import { getCustomerInfo, verifyCustomer } from '../../services/authService';
-import { getImageUrl } from '../../services/api';
-import { ORDER_STATUSES, getStatusColor } from '../../constants/orderStatus';
+import api, { getCustomerInfo, verifyCustomer, getImageUrl, PLACEHOLDER_IMAGE } from '../../services/api';
+import { useFetch } from '../../hooks/useFetch';
+import { ORDER_STATUSES, getStatusColor } from '../../assets/data';
 
 const MyOrders = () => {
     const navigate = useNavigate();
+    // Get logged-in customer information from localStorage
     const customerInfo = getCustomerInfo();
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // Fetch customer's orders from the server
+    const { data: fetchedOrders, loading: ordersLoading, error: ordersError } = useFetch('/orders/myorders');
+    // Search input for filtering orders by ID
     const [searchTerm, setSearchTerm] = useState('');
+    // Status filter dropdown (all, Pending, Delivered, etc.)
     const [selectedStatus, setSelectedStatus] = useState('all');
+    // Toggle to show all orders or just first 2
     const [showAllOrders, setShowAllOrders] = useState(false);
 
+    // Check if customer is logged in, redirect to login if not
     useEffect(() => {
-        // Check if customer is logged in
-        const customerInfo = getCustomerInfo();
-        console.log('Customer logged in:', customerInfo); // Debug
-        
         if (!customerInfo) {
             navigate('/login');
             return;
         }
-
-        // Verify customer still exists in database
+        // Verify customer token is still valid
         if (customerInfo.token) {
             verifyCustomer(customerInfo.token).catch(() => {
-                // User deleted from database, redirect to login
                 navigate('/login');
             });
         }
+    }, [navigate, customerInfo]);
 
-        fetchMyOrders();
-    }, [navigate]);
-
-    const fetchMyOrders = async () => {
-        setLoading(true);
-        try {
-            console.log('Fetching orders for customer:', getCustomerInfo()?._id); // Debug
-            const response = await api.get('/orders/myorders');
-            console.log('Orders received:', response.data); // Debug
-            setOrders(response.data || []);
-        } catch (error) {
-            console.error('Error fetching orders:', error);
-            // Check if it's a 401 error
-            if (error.response?.status === 401) {
-                console.error('Token validation failed - customer may not be authenticated');
-                toast.error('Session expired. Please login again.');
-                navigate('/login');
-            } else {
-                toast.error('Failed to load your orders');
-            }
-        } finally {
-            setLoading(false);
+    // Handle session expired - redirect to login if token is invalid
+    useEffect(() => {
+        if (ordersError && ordersError.includes('401')) {
+            toast.error('Session expired. Please login again.');
+            navigate('/login');
         }
-    };
+    }, [ordersError, navigate]);
 
+    // Use fetched orders or empty array
+    const orders = fetchedOrders || [];
+    const loading = ordersLoading;
+
+    // Get appropriate icon for each order status
     const getStatusIcon = (status) => {
         switch (status) {
             case 'Pending':
@@ -78,20 +81,19 @@ const MyOrders = () => {
         }
     };
 
-
-
+    // Filter orders by search term and status
     const filteredOrders = orders.filter(order => {
         const searchLower = searchTerm.toLowerCase();
-        const matchesSearch = 
+        // Search by order number, full ID, or last 6 characters of ID
+        const matchesSearch =
             (order.orderNumber && order.orderNumber.toLowerCase().includes(searchLower)) ||
             order._id.toLowerCase().includes(searchLower) ||
             order._id.slice(-6).toLowerCase().includes(searchLower);
-        
         const matchesStatus = selectedStatus === 'all' || order.orderStatus === selectedStatus;
-        
         return matchesSearch && matchesStatus;
     });
 
+    // Show loading spinner while fetching orders
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center pt-32">
@@ -105,7 +107,6 @@ const MyOrders = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-cream via-white to-light-brown/10 pt-32 pb-12 px-4">
             <div className="max-w-6xl mx-auto">
-                {/* Header */}
                 <div className="flex items-center justify-between mb-12">
                     <div>
                         <h1 className="text-4xl font-display font-bold text-dark-brown mb-2">My Orders</h1>
@@ -113,10 +114,8 @@ const MyOrders = () => {
                     </div>
                 </div>
 
-                {/* Search and Filter */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Search */}
                         <div className="relative">
                             <input
                                 type="text"
@@ -128,7 +127,6 @@ const MyOrders = () => {
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                         </div>
 
-                        {/* Status Filter */}
                         <div>
                             <select
                                 value={selectedStatus}
@@ -144,7 +142,6 @@ const MyOrders = () => {
                     </div>
                 </div>
 
-                {/* Orders */}
                 {filteredOrders.length === 0 ? (
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
                         <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
@@ -162,7 +159,6 @@ const MyOrders = () => {
                     <div className="space-y-4">
                         {(showAllOrders ? filteredOrders : filteredOrders.slice(0, 2)).map(order => (
                             <div key={order._id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all">
-                                {/* Order Header */}
                                 <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                                     <div className="grid grid-cols-6 gap-4">
                                         <div>
@@ -197,7 +193,6 @@ const MyOrders = () => {
                                     </div>
                                 </div>
 
-                                {/* Order Items (Compact) */}
                                 <div className="px-4 py-3 border-b border-gray-200">
                                     <div className="space-y-2">
                                         {order.orderItems?.slice(0, 2).map((item, idx) => (
@@ -207,7 +202,7 @@ const MyOrders = () => {
                                                         src={getImageUrl(item.image)}
                                                         alt={item.name}
                                                         className="h-full w-full object-cover"
-                                                        onError={(e) => { e.target.src = '/placeholder.png'; }}
+                                                        onError={(e) => { e.target.onerror = null; e.target.src = PLACEHOLDER_IMAGE; }}
                                                     />
                                                 </div>
                                                 <div className="flex-1 text-xs">
@@ -223,7 +218,6 @@ const MyOrders = () => {
                                     </div>
                                 </div>
 
-                                {/* Price Breakdown */}
                                 <div className="px-4 py-3 border-b border-gray-200 bg-white">
                                     <div className="space-y-2 text-xs">
                                         <div className="flex items-center justify-between">
@@ -240,7 +234,6 @@ const MyOrders = () => {
                                         </div>
                                     </div>
                                 </div>
-
                             </div>
                         ))}
 

@@ -1,12 +1,29 @@
+/**
+ * CartDrawer Component - Side panel showing shopping cart contents
+ *
+ * Features:
+ * - Slides in from the right side of the screen
+ * - Displays all items currently in the cart
+ * - Shows product images/icons, names, prices, and quantities
+ * - Allows quantity adjustment with +/- buttons
+ * - Allows removing individual items
+ * - Shows cart subtotal
+ * - Checkout button to proceed to payment
+ * - Empty cart message when no items
+ */
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { formatPrice } from '../../assets/data';
 
 const CartDrawer = ({ isOpen, setIsOpen }) => {
+  // Get cart data and functions from cart context
   const { cart, updateCartQty, removeFromCart, subtotal } = useCart();
+  // Navigation hook for redirect to checkout
   const navigate = useNavigate();
 
+  // Don't render drawer if not open
   if (!isOpen) return null;
 
   return (
@@ -72,5 +89,6 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
     </div>
   );
 };
+
 
 export default CartDrawer;

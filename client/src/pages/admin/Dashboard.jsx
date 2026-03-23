@@ -1,15 +1,32 @@
+/**
+ * Admin Dashboard Page Component
+ *
+ * This is the main admin dashboard showing business analytics and key metrics.
+ * It displays:
+ * - Total number of products
+ * - Number of active orders (not delivered/cancelled)
+ * - Total number of product categories
+ * - Inventory health (low stock and out of stock items)
+ * - Recent orders overview
+ * - Quick action buttons to view detailed pages
+ *
+ * This page gives admin a quick overview of business status.
+ */
+
 import React from 'react';
 import { Package, ShoppingBag, Clock, Layers } from 'lucide-react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+  // Get context data from parent AdminLayout
   const context = useOutletContext();
   const navigate = useNavigate();
-  
+
   if (!context) {
     return <div>Loading...</div>;
   }
 
+  // Destructure data from context
   const { products, orders, categories, setStockFilter } = context;
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -18,7 +35,6 @@ const Dashboard = () => {
         <p className="text-gray-500">Real-time insights into your bakery's performance</p>
       </div>
 
-      {/* High-Level Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-5 group hover:shadow-md transition-all">
           <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -50,7 +66,6 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Inventory Health */}
         <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
           <h3 className="text-xl font-bold text-dark-brown mb-6 flex items-center gap-2">
             <Package size={22} className="text-light-brown" /> Inventory Health
@@ -95,7 +110,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Order Volume */}
         <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
           <h3 className="text-xl font-bold text-dark-brown mb-6 flex items-center gap-2">
             <ShoppingBag size={22} className="text-light-brown" /> Order Flow
@@ -150,3 +164,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

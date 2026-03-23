@@ -1,46 +1,59 @@
+/**
+ * Menu / Products Page Component
+ *
+ * This page displays all bakery products in a filterable grid.
+ * Users can filter products by:
+ * - Category (Breads, Cakes, Pastries, etc.)
+ * - Price range (0 to 3000 rupees)
+ * - Search term (search in product names)
+ *
+ * The page shows 20+ products in a responsive grid layout
+ * with a sticky sidebar for easy filtering.
+ */
+
 import React, { useState, useEffect } from 'react';
 import ProductCard from '../../components/client/ProductCard';
 import { formatPrice } from '../../assets/data';
 import { Search } from 'lucide-react';
-import { useSearchAndFilter } from '../../hooks/useSearchAndFilter';
 
 const Menu = ({ products, categories, selectedCategory }) => {
+  // Maximum price filter for the range slider (₨ 3000)
   const [priceRange, setPriceRange] = useState(3000);
+  // Currently selected category filter
   const [selectedCat, setSelectedCat] = useState(selectedCategory || null);
 
-  // Update selected category when prop changes
+  // Update selected category when the prop changes (e.g., from quick links)
   useEffect(() => {
     if (selectedCategory) {
       setSelectedCat(selectedCategory);
     }
   }, [selectedCategory]);
 
-  const { searchTerm: search, setSearchTerm: setSearch, filteredItems: filtered, setFilter } = useSearchAndFilter(
-    products,
-    (p, searchTerm, filters) => {
-      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCat = filters.category ? (p.category === filters.category || p.categoryId === filters.category) : true;
-      const matchesPrice = p.price <= filters.price;
-      return matchesSearch && matchesCat && matchesPrice;
-    },
-    { category: selectedCat, price: priceRange }
-  );
+  // Search input text for filtering by product name
+  const [search, setSearch] = useState('');
 
+  // Filter products based on search, category, and price
+  const filtered = products.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCat = selectedCat ? (p.category === selectedCat || p.categoryId === selectedCat) : true;
+    const matchesPrice = p.price <= priceRange;
+    return matchesSearch && matchesCat && matchesPrice;
+  });
+
+  // Handle category filter changes
   const handleCategoryChange = (cat) => {
     setSelectedCat(cat);
-    setFilter('category', cat);
   };
 
+  // Handle price range filter changes
   const handlePriceChange = (newPrice) => {
     setPriceRange(newPrice);
-    setFilter('price', newPrice);
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 animate-fade-in-up mt-20">
       <h1 className="text-4xl font-bold text-primary text-center mb-10">Our Menu</h1>
       <div className="flex flex-col lg:flex-row gap-8">
-      {/* Sidebar Filters */}
       <aside className="lg:w-1/4 h-fit lg:sticky lg:top-24 flex-shrink-0">
         <div className="bg-cardBg p-6 rounded-3xl shadow-xl border border-primary/5">
           <h2 className="text-xl font-bold text-primary mb-4">Categories</h2>
@@ -92,7 +105,6 @@ const Menu = ({ products, categories, selectedCategory }) => {
         </div>
       </aside>
 
-      {/* Product Grid */}
       <div className="lg:w-3/4">
         <div className="flex justify-between items-center mb-10 pb-4 border-b border-primary/5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-primary">{filtered.length} products found</p>
@@ -118,6 +130,6 @@ const Menu = ({ products, categories, selectedCategory }) => {
     </div>
   </div>
 );
-};
+}
 
 export default Menu;

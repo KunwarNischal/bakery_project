@@ -1,15 +1,32 @@
-import React from 'react';
+/**
+ * Categories Management Page Component
+ *
+ * This page allows admins to manage product categories.
+ * Features include:
+ * - View all categories in a table
+ * - Search categories by name
+ * - Add new categories via modal form
+ * - Edit existing categories
+ * - Delete categories
+ * - Show number of products in each category
+ * - Pagination with "Show More" button
+ *
+ * Categories help organize products and make browsing easier for customers.
+ */
+
+import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Search, Layers } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
-import { useSearchAndFilter } from '../../hooks/useSearchAndFilter';
 
 const CategoriesManagement = () => {
+  // Get context data from parent AdminLayout
   const context = useOutletContext();
-  
+
   if (!context) {
     return <div>Loading...</div>;
   }
 
+  // Get functions and data from parent context
   const {
     categories,
     products,
@@ -20,14 +37,16 @@ const CategoriesManagement = () => {
     setIsCategoryModalOpen
   } = context;
 
-  const { searchTerm, setSearchTerm, filteredItems: filteredCategories } = useSearchAndFilter(
-    categories,
-    (item, search) => item.name.toLowerCase().includes(search.toLowerCase())
+  // Search input for filtering categories
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter categories by search term
+  const filteredCategories = categories.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-      {/* Left Column: Management */}
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-dark-brown">Categories Management</h1>
@@ -112,7 +131,6 @@ const CategoriesManagement = () => {
         </div>
       </div>
 
-      {/* Right Column: Visual Cover & Stats */}
       <div className="space-y-8">
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden group">
           <div className="h-64 overflow-hidden relative">
@@ -159,5 +177,4 @@ const CategoriesManagement = () => {
     </div>
   );
 };
-
 export default CategoriesManagement;

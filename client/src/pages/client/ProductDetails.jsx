@@ -1,36 +1,55 @@
+/**
+ * Product Details Page Component
+ *
+ * This page displays detailed information about a single product.
+ * It includes:
+ * - Large product image and icon
+ * - Product name, price, and category
+ * - Full product description
+ * - Ingredients and allergen information
+ * - Add to cart functionality with quantity selector
+ * - Share product button
+ * - 4 related products from same category
+ *
+ * Product is fetched by ID from URL parameters.
+ * If product not found, user is redirected back to menu.
+ */
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Share2 } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
-import { getProductById } from '../../services/productService';
+import { getProductById } from '../../services/api';
 import { INITIAL_PRODUCTS, CATEGORIES, formatPrice } from '../../assets/data';
 
 const ProductDetails = ({ products = INITIAL_PRODUCTS }) => {
+  // Get product ID from URL (e.g., /products/123)
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  // Store the product data fetched from server
   const [product, setProduct] = useState(null);
 
-  // Get related products intelligently
+  // Calculate related products - other items in same category
   const relatedProducts = useMemo(() => {
     if (!product || !products) return [];
 
     // First, try to get products from same category
-    let related = products.filter(p => 
+    let related = products.filter(p =>
       p.category === product.category && p._id !== product._id && p.id !== product.id
     );
 
-    // If less than 4 products in same category, supplement with featured products
+    // If less than 4, add featured products
     if (related.length < 4) {
-      const featured = products.filter(p => 
+      const featured = products.filter(p =>
         p.featured && p._id !== product._id && p.id !== product.id
       );
       related = [...related, ...featured].slice(0, 4);
     }
 
-    // If still less than 4, add any other products
+    // If still less than 4, add other products
     if (related.length < 4) {
-      const others = products.filter(p => 
+      const others = products.filter(p =>
         p._id !== product._id && p.id !== product.id && !related.find(r => r._id === p._id)
       );
       related = [...related, ...others].slice(0, 4);
@@ -39,22 +58,24 @@ const ProductDetails = ({ products = INITIAL_PRODUCTS }) => {
     return related;
   }, [product, products]);
 
+  // Fetch product data when component loads or product ID changes
   useEffect(() => {
     const fetchProduct = async () => {
-      // Try fetching from API first
+      // Try to fetch from server first
       const data = await getProductById(id);
       if (data) {
         setProduct(data);
       } else {
-        // Fallback to dynamic products prop
+        // Fall back to local data if server request fails
         const p = products.find(item => item._id === id || item.id === parseInt(id));
         if (p) {
           setProduct(p);
         } else {
+          // Redirect to menu if product not found
           navigate('/menu');
         }
       }
-      // Scroll to top when product changes
+      // Scroll to top of page when product loads
       window.scrollTo(0, 0);
     };
     fetchProduct();
@@ -140,7 +161,6 @@ const ProductDetails = ({ products = INITIAL_PRODUCTS }) => {
         </div>
       </div>
 
-      {/* Related Products Section */}
       {relatedProducts.length > 0 && (
         <div className="mt-32">
           <h3 className="font-display text-3xl font-bold text-primary mb-12 italic">You might also enjoy...</h3>

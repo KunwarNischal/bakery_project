@@ -1,64 +1,117 @@
+/**
+ * Admin Login Page Component
+ *
+ * This is the secure login page for bakery administrators.
+ * Features include:
+ * - Email and password authentication
+ * - Show/hide password toggle
+ * - Form validation and error messages
+ * - Verification that user is admin (not just regular customer)
+ * - Redirect to admin dashboard after successful login
+ * - Admin credentials stored in localStorage for session management
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { useForm } from '../../hooks/useForm';
 
 const AdminLogin = () => {
-    const navigate = useNavigate();
-    const [showPassword, setShowPassword] = useState(false);
-    const [authError, setAuthError] = useState('');
 
-    const form = useForm({
-        initialValues: { email: '', password: '' },
-        validations: {
-            email: (val) => {
-                if (!val) return 'Email is required';
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Invalid email format';
-                return '';
-            },
-            password: (val) => {
-                if (!val) return 'Password is required';
-                if (val.length < 6) return 'Password must be at least 6 characters';
-                return '';
-            }
-        },
-        onSubmit: async (values) => {
-            setAuthError('');
-            try {
-                const { data } = await api.post('/auth/login', values);
-                console.log('Login response:', data); // Debug: Check what server returned
-                
-                if (data.isAdmin) {
-                    // Save admin token (don't clear customer token - allow both to coexist for multi-tab support)
-                    const adminData = {
-                        _id: data._id,
-                        name: data.name,
-                        email: data.email,
-                        isAdmin: data.isAdmin,
-                        token: data.token
-                    };
-                    localStorage.setItem('userInfo', JSON.stringify(adminData));
-                    console.log('Admin token saved:', adminData); // Debug: Verify it was saved
-                    
-                    toast.success(`Welcome back, ${data.name}!`);
-                    // Small delay to ensure token is properly registered before navigating
-                    setTimeout(() => {
-                        navigate('/admin/dashboard');
-                    }, 100);
-                } else {
-                    const msg = 'Not authorized as an admin';
-                    setAuthError(msg);
-                    toast.error(msg);
-                }
-            } catch (err) {
-                const msg = err.response?.data?.message || 'Invalid credentials';
-                setAuthError(msg);
-                toast.error(msg);
-            }
+    const navigate = useNavigate();
+    // State to toggle password visibility
+    const [showPassword, setShowPassword] = useState(false);
+    // Store authentication error from server
+    const [authError, setAuthError] = useState('');
+    // Track if login is being submitted
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Email and password input values
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    // Track which fields have been interacted with
+    const [touched, setTouched] = useState({ email: false, password: false });
+    // Store validation error messages
+    const [errors, setErrors] = useState({ email: '', password: '' });
+
+    // Validate individual field
+    const validate = (name, value) => {
+        if (name === 'email') {
+            if (!value) return 'Email is required';
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
         }
-    });
+        if (name === 'password') {
+            if (!value) return 'Password is required';
+        }
+        return '';
+    };
+
+    // Handle email input changes
+    const handleEmailChange = (e) => {
+        const val = e.target.value;
+        setEmail(val);
+        if (touched.email) setErrors(prev => ({ ...prev, email: validate('email', val) }));
+    };
+
+    // Handle password input changes
+    const handlePasswordChange = (e) => {
+        const val = e.target.value;
+        setPassword(val);
+        if (touched.password) setErrors(prev => ({ ...prev, password: validate('password', val) }));
+    };
+
+    // Handle login form submission
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setAuthError('');
+
+        // Validate both fields before submitting
+        const emailErr = validate('email', email);
+        const passErr = validate('password', password);
+
+        if (emailErr || passErr) {
+            setErrors({ email: emailErr, password: passErr });
+            setTouched({ email: true, password: true });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // Send login request to server
+            const { data } = await api.post('/auth/login', { email, password });
+
+            // Check if user is an admin
+            if (data.isAdmin) {
+                // Store admin information in localStorage
+                const adminData = {
+                    _id: data._id,
+                    name: data.name,
+                    email: data.email,
+                    isAdmin: data.isAdmin,
+                    token: data.token
+                };
+                localStorage.setItem('userInfo', JSON.stringify(adminData));
+
+                toast.success(`Welcome back, ${data.name}!`);
+                // Navigate to admin dashboard
+                setTimeout(() => {
+                    navigate('/admin/dashboard');
+                }, 100);
+            } else {
+                // User exists but is not an admin
+                setAuthError('Not authorized as an admin');
+                toast.error('Not authorized as an admin');
+            }
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Invalid credentials';
+            setAuthError(msg);
+            toast.error(msg);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
 
     return (
         <div className="min-h-screen bg-cream flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -81,7 +134,7 @@ const AdminLogin = () => {
                         Sign in to manage your bakery
                     </p>
                 </div>
-                <form className="space-y-6" onSubmit={form.handleSubmit}>
+                <form className="space-y-6" onSubmit={handleSubmit}>
                     {authError && (
                         <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium">
                             {authError}
@@ -93,16 +146,15 @@ const AdminLogin = () => {
                             type="email"
                             required
                             name="email"
-                            value={form.values.email}
-                            onChange={form.handleChange}
-                            onBlur={form.handleBlur}
-                            className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-light-brown bg-white text-dark-brown ${
-                                form.touched.email && form.errors.email ? 'border-red-500' : 'border-gray-200'
-                            }`}
+                            value={email}
+                            onChange={handleEmailChange}
+                            onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                            className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-light-brown bg-white text-dark-brown ${touched.email && errors.email ? 'border-red-500' : 'border-gray-200'
+                                }`}
                             placeholder="admin@hatemalo.com"
                         />
-                        {form.touched.email && form.errors.email && (
-                            <p className="text-red-500 text-sm mt-1">{form.errors.email}</p>
+                        {touched.email && errors.email && (
+                            <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                         )}
                     </div>
                     <div>
@@ -112,12 +164,11 @@ const AdminLogin = () => {
                                 type={showPassword ? "text" : "password"}
                                 required
                                 name="password"
-                                value={form.values.password}
-                                onChange={form.handleChange}
-                                onBlur={form.handleBlur}
-                                className={`w-full px-4 py-3 pr-12 rounded-xl border focus:outline-none focus:ring-2 focus:ring-light-brown bg-white text-dark-brown ${
-                                    form.touched.password && form.errors.password ? 'border-red-500' : 'border-gray-200'
-                                }`}
+                                value={password}
+                                onChange={handlePasswordChange}
+                                onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
+                                className={`w-full px-4 py-3 pr-12 rounded-xl border focus:outline-none focus:ring-2 focus:ring-light-brown bg-white text-dark-brown ${touched.password && errors.password ? 'border-red-500' : 'border-gray-200'
+                                    }`}
                                 placeholder="••••••••"
                             />
                             <button
@@ -129,18 +180,19 @@ const AdminLogin = () => {
                                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                             </button>
                         </div>
-                        {form.touched.password && form.errors.password && (
-                            <p className="text-red-500 text-sm mt-1">{form.errors.password}</p>
+                        {touched.password && errors.password && (
+                            <p className="text-red-500 text-sm mt-1">{errors.password}</p>
                         )}
                     </div>
 
                     <button
                         type="submit"
-                        disabled={form.isSubmitting}
+                        disabled={isSubmitting}
                         className="btn-primary w-full py-3 text-lg mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {form.isSubmitting ? 'Signing In...' : 'Sign In'}
+                        {isSubmitting ? 'Signing In...' : 'Sign In'}
                     </button>
+
                 </form>
             </div>
         </div>

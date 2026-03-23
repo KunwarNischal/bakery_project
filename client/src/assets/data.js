@@ -12,7 +12,7 @@ export const CATEGORIES = [
 ];
 
 export const INITIAL_PRODUCTS = [
-  // 1. Bread & Bun Items
+
   { id: 1, categoryId: 1, name: "Banana Bread Big", price: 420.00, stock: 15, featured: true, icon: "🍞", image: "/assets/bakery/Banana-Bread-big.jpg" },
   { id: 2, categoryId: 1, name: "Banana Bread Small", price: 215.00, stock: 20, icon: "🍞", image: "/assets/bakery/Banana-Bread-Small.jpg" },
   { id: 3, categoryId: 1, name: "Brown Bread", price: 135.00, stock: 30, icon: "🍞", image: "/assets/bakery/Brown_Bread.jpg" },
@@ -20,7 +20,6 @@ export const INITIAL_PRODUCTS = [
   { id: 5, categoryId: 1, name: "Cheese Bread", price: 340.00, stock: 12, featured: true, icon: "🍞", image: "/assets/bakery/cheese_bread.jpg" },
   { id: 6, categoryId: 1, name: "Chicken Bun", price: 115.00, stock: 40, icon: "🥯", image: "/assets/bakery/chicken_bun.jpg" },
 
-  // 2. Cake Items
   { id: 7, categoryId: 2, name: "Black Forest Cake", price: 1205.00, stock: 8, featured: true, icon: "🎂", image: "/assets/bakery/black_forest_cake.jpg" },
   { id: 8, categoryId: 2, name: "Black Forest Eggless Cake", price: 1400.00, stock: 5, icon: "🎂", image: "/assets/bakery/black_forest_eggless_cake.jpg" },
   { id: 9, categoryId: 2, name: "Blueberry & Fruit Cake", price: 1520.00, stock: 6, icon: "🎂", image: "/assets/bakery/blueberry&fruitcake.jpg" },
@@ -47,32 +46,26 @@ export const INITIAL_PRODUCTS = [
   { id: 30, categoryId: 2, name: "White Forest & Chocolate", price: 1400.00, stock: 6, icon: "🎂", image: "/assets/bakery/white_forest&chocolate.jpg" },
   { id: 31, categoryId: 2, name: "White Forest & Chocolate Eggless", price: 1320.00, stock: 4, icon: "🎂", image: "/assets/bakery/white_forest&chocolate(eggless).jpg" },
 
-  // 3. Chocolate Items
   { id: 32, categoryId: 3, name: "Choco Lava", price: 200.00, stock: 18, featured: true, icon: "🌋", image: "/assets/bakery/choco_lava.jpg" },
   { id: 33, categoryId: 3, name: "Chocolate Rum Ball", price: 60.00, stock: 25, icon: "🍩", image: "/assets/bakery/chocolate_rum_ball.jpg" },
   { id: 34, categoryId: 3, name: "White Rum Ball", price: 60.00, stock: 20, icon: "🍩", image: "/assets/bakery/white_rum_Ball.jpg" },
 
-  // 4. Cookies Items
   { id: 35, categoryId: 4, name: "Big Cookies", price: 70.00, stock: 50, icon: "🍪", image: "/assets/bakery/big_cookies.jpg" },
   { id: 36, categoryId: 4, name: "Velvet Cookies", price: 50.00, stock: 40, icon: "🍪", image: "/assets/bakery/velvet_cookies.jpg" },
 
-  // 5. Croissant Items
   { id: 37, categoryId: 5, name: "Plain Croissant", price: 150.00, stock: 25, featured: true, icon: "🥐", image: "/assets/bakery/plain_croissant.jpg" },
 
-  // 6. Danish Items
   { id: 38, categoryId: 6, name: "Chocolate Danish", price: 190.00, stock: 15, icon: "🥐", image: "/assets/bakery/chocolate_danish.jpg" },
   { id: 39, categoryId: 6, name: "Cinnamon Danish", price: 130.00, stock: 18, icon: "🥐", image: "/assets/bakery/cinnamon_danish.jpg" },
   { id: 40, categoryId: 6, name: "Crunchy Chocolate Danish", price: 165.00, stock: 12, icon: "🥐", image: "/assets/bakery/cruncy_chocolate_danish.jpg" },
   { id: 41, categoryId: 6, name: "Peach Danish", price: 140.00, stock: 10, icon: "🥐", image: "/assets/bakery/peach_danish.jpg" },
   { id: 42, categoryId: 6, name: "Pineapple Danish", price: 120.00, stock: 14, icon: "🥐", image: "/assets/bakery/pineapple_danish.jpg" },
 
-  // 7. Doughnut Items
   { id: 43, categoryId: 7, name: "Chocolate Doughnut", price: 65.00, stock: 30, icon: "🍩", image: "/assets/bakery/chocolate_doughnut.jpg" },
   { id: 44, categoryId: 7, name: "Chocolate Doughnut Small", price: 40.00, stock: 25, icon: "🍩", image: "/assets/bakery/chocolate_doughnut_small.jpg" },
   { id: 45, categoryId: 7, name: "Plain Doughnut", price: 50.00, stock: 35, icon: "🍩", image: "/assets/bakery/plain_doughnut.jpg" },
   { id: 46, categoryId: 7, name: "Doughnut Small", price: 30.00, stock: 40, icon: "🍩", image: "/assets/bakery/doughnut_small.jpg" },
 
-  // 8. Macaroons Items
   { id: 47, categoryId: 8, name: "Blue Vanilla Macaroons", price: 100.00, stock: 30, icon: "🥯", image: "/assets/bakery/blue_vanilla_macaroons.jpg" },
   { id: 48, categoryId: 8, name: "Blueberry Macaroons", price: 100.00, stock: 30, icon: "🥯", image: "/assets/bakery/blueberry_macaroons.jpg" },
   { id: 49, categoryId: 8, name: "Chocolate Macaroons", price: 100.00, stock: 30, icon: "🥯", image: "/assets/bakery/chocolate_macaroons.jpg" },
@@ -85,12 +78,10 @@ export const INITIAL_PRODUCTS = [
   { id: 56, categoryId: 8, name: "Strawberry Macaroons", price: 100.00, stock: 30, icon: "🥯", image: "/assets/bakery/strawberry_macaroons.jpg" },
   { id: 57, categoryId: 8, name: "Vanilla Macaroons", price: 100.00, stock: 35, icon: "🥯", image: "/assets/bakery/vanilla_macaroons.jpg" },
 
-  // 9. Muffin & Apple Pie Items
   { id: 58, categoryId: 9, name: "Apple Pie", price: 230.00, stock: 14, featured: true, icon: "🥧", image: "/assets/bakery/apple_pie.jpg" },
   { id: 59, categoryId: 9, name: "Chocolate Muffin", price: 105.00, stock: 20, icon: "🧁", image: "/assets/bakery/chocolate_muffin.jpg" },
   { id: 60, categoryId: 9, name: "Plain Muffin", price: 95.00, stock: 25, icon: "🧁", image: "/assets/bakery/plain_muffin.jpg" },
 
-  // 10. Pastry Items
   { id: 61, categoryId: 10, name: "Blueberry Tart", price: 195.00, stock: 12, icon: "🥧", image: "/assets/bakery/blueberry_tart.jpg" },
   { id: 62, categoryId: 10, name: "Choco Mix Pastry", price: 200.00, stock: 15, icon: "🍰", image: "/assets/bakery/choco_mix_pastry.jpg" },
   { id: 63, categoryId: 10, name: "Chocolate Pyramid", price: 180.00, stock: 10, icon: "🍰", image: "/assets/bakery/chocolate_pyramid.jpg" },
@@ -104,3 +95,41 @@ export const INITIAL_PRODUCTS = [
 ];
 
 export const formatPrice = (price) => `Rs ${price.toFixed(2)}`;
+
+export const CATEGORY_ICONS = {
+  'Bread & Bun': '🥖',
+  'Cake': '🎂',
+  'Chocolate': '🍫',
+  'Cookies': '🍪',
+  'Croissant': '🥐',
+  'Danish': '🥧',
+  'Doughnut': '🍩',
+  'Macaroons': '🪨',
+  'Muffin & Apple Pie': '🧁',
+  'Pastry': '🥐',
+};
+
+export const getIconForCategory = (categoryName) => {
+  return CATEGORY_ICONS[categoryName] || '🥖';
+};
+
+export const ORDER_STATUSES = [
+    'Pending',
+    'Preparing',
+    'Processing',
+    'Shipped',
+    'Delivered',
+    'Cancelled'
+];
+
+export const getStatusColor = (status) => {
+    switch (status) {
+        case 'Pending': return 'bg-yellow-100 text-yellow-700';
+        case 'Preparing': return 'bg-blue-100 text-blue-700';
+        case 'Processing': return 'bg-indigo-100 text-indigo-700';
+        case 'Shipped': return 'bg-purple-100 text-purple-700';
+        case 'Delivered': return 'bg-green-100 text-green-700';
+        case 'Cancelled': return 'bg-red-100 text-red-700';
+        default: return 'bg-gray-100 text-gray-700';
+    }
+};

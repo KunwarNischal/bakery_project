@@ -1,7 +1,20 @@
+/**
+ * Hero Component - Main banner section of the home page
+ *
+ * Displays:
+ * - Attractive hero title highlighting the bakery's craft
+ * - Descriptive subheading about fresh artisanal treats
+ * - Call-to-action buttons to explore menu or learn about the bakery
+ * - Large banner image showcasing the bakery
+ * - Animated decorative background elements
+ * - Scroll indicator at the bottom
+ */
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
+  // Use navigate hook to programmatically navigate to different pages
   const navigate = useNavigate();
   return (
   <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-background pt-32 pb-12">
