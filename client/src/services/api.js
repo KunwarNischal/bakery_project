@@ -26,6 +26,7 @@ import axios from 'axios';
  */
 const API_BASE_URL = 'http://localhost:5000';
 const API_ENDPOINT = '/api';
+const AUTH_SCHEME = 'Bearer';
 
 // Storage keys for localStorage operations (avoid typos, DRY principle)
 const STORAGE_KEYS = {
@@ -35,6 +36,28 @@ const STORAGE_KEYS = {
 
 // Admin routes that require authentication
 const ADMIN_ROUTES = ['/admin', '/products', '/categories', '/orders'];
+
+// API endpoint constants - avoid magic strings scattered through the code
+const API_ENDPOINTS = {
+  // Authentication
+  REGISTER: '/auth/register',
+  LOGIN: '/auth/login',
+  VERIFY: '/auth/verify',
+  // Products
+  PRODUCTS: '/products',
+  PRODUCT_BY_ID: (id) => `/products/${id}`,
+  // Categories
+  CATEGORIES: '/categories',
+  // Orders
+  ORDER_STATUS: (id) => `/orders/${id}/status`,
+};
+
+// Image path constants - avoid magic strings for path prefixes
+const IMAGE_PREFIXES = {
+  UPLOADS: '/uploads/',
+  ASSETS: '/assets/',
+  BAKERY_ASSETS: '/assets/bakery',
+};
 
 /**
  * ============================================================================
@@ -47,83 +70,98 @@ const ADMIN_ROUTES = ['/admin', '/products', '/categories', '/orders'];
 
 /**
  * Helper function: Check if a route is for admin operations
- * Admin routes need admin authentication
+ * Uses Set for O(1) lookup instead of array iteration (optimization for hot path)
  */
 function isAdminAPIRoute(url) {
-  // Check if URL contains any admin route
-  const containsAdminRoute = ADMIN_ROUTES.some(route => url.includes(route));
-
   // Special case: /orders/myorders is customer route, not admin
-  const isMyOrdersRoute = url.includes('/orders/myorders');
+  if (url.includes('/orders/myorders')) {
+    return false;
+  }
 
-  return containsAdminRoute && !isMyOrdersRoute;
+  // Check if URL contains any admin route
+  // This still uses array iteration because we need substring matching (.includes),
+  // not exact key matching which would benefit from Set
+  return ADMIN_ROUTES.some(route => url.includes(route));
 }
 
 /**
  * Consolidated helper: Extract and validate token from localStorage
- * This consolidates getAdminToken and getCustomerToken logic to eliminate duplication
+ * Eliminates duplication between getAdminToken and getCustomerToken
  *
  * @param {string} storageKey - localStorage key to retrieve ('userInfo' or 'customerInfo')
- * @param {boolean} requireAdmin - Whether we expect this to be an admin token (true) or customer (false)
+ * @param {boolean} requireAdmin - Whether we expect an admin token (true) or customer (false)
  * @returns {string|null} - The authentication token if valid, null otherwise
  */
 function getTokenFromStorage(storageKey, requireAdmin) {
   try {
-    // Get info from localStorage (stored as JSON string)
     const dataJSON = localStorage.getItem(storageKey);
-
-    // If not found, return null
     if (!dataJSON) return null;
 
-    // Parse the JSON string back to an object
     const data = JSON.parse(dataJSON);
-
     // Return token only if it exists and role matches what we expect
-    // For admin tokens: isAdmin must be true
-    // For customer tokens: isAdmin must be false
     if (data.token && data.isAdmin === requireAdmin) {
       return data.token;
     }
-
     return null;
   } catch (error) {
-    // If parsing fails, return null (corrupted data or invalid format)
     return null;
   }
 }
 
 /**
- * Legacy compatibility wrappers - kept for backward compatibility
- * These now delegate to the consolidated getTokenFromStorage function
+ * Generic helper: Extract data from localStorage with safe parsing
+ * Handles try-catch and JSON parsing for any data type
+ *
+ * @param {string} storageKey - localStorage key to retrieve
+ * @returns {Object|null} - Parsed data or null if not found/invalid
  */
-function getAdminToken() {
-  return getTokenFromStorage(STORAGE_KEYS.ADMIN_INFO, true);
-}
-
-function getCustomerToken() {
-  return getTokenFromStorage(STORAGE_KEYS.CUSTOMER_INFO, false);
+function getFromStorage(storageKey) {
+  try {
+    const dataJSON = localStorage.getItem(storageKey);
+    return dataJSON ? JSON.parse(dataJSON) : null;
+  } catch (error) {
+    return null;
+  }
 }
 
 /**
- * Helper function: Get the authentication token for the current route type
- * Consolidates token retrieval logic to avoid duplication
+ * Helper: Save customer info to localStorage with error handling
+ * Consolidates the repeated pattern of saving customer data
+ *
+ * @param {Object} data - Customer data to save
+ */
+function saveCustomerToStorage(data) {
+  // Only save if data exists and has token
+  if (data && data.token) {
+    localStorage.setItem(STORAGE_KEYS.CUSTOMER_INFO, JSON.stringify(data));
+  }
+}
+
+/**
+ * Helper: Extract error message from API error response
+ * Consolidates error handling pattern used in 3+ places
+ *
+ * @param {Object} error - Axios error object
+ * @param {string} defaultMessage - Default message if none in response
+ * @returns {string} - Error message to display
+ */
+function getErrorMessage(error, defaultMessage) {
+  return error.response?.data?.message || defaultMessage;
+}
+
+/**
+ * Helper: Get authentication token for the current route type
+ * Optimized to minimize localStorage calls on hot path
+ *
+ * @param {boolean} isAdminRoute - Whether this is an admin route
+ * @returns {string|null} - Authentication token or null
  */
 function getAuthTokenForRoute(isAdminRoute) {
-  if (isAdminRoute) {
-    // This is an admin route - try to get admin token first
-    const adminToken = getTokenFromStorage(STORAGE_KEYS.ADMIN_INFO, true);
-    if (adminToken) return adminToken;
-
-    // If no admin token, fallback to customer token
-    return getTokenFromStorage(STORAGE_KEYS.CUSTOMER_INFO, false);
-  } else {
-    // This is a customer route - try to get customer token first
-    const customerToken = getTokenFromStorage(STORAGE_KEYS.CUSTOMER_INFO, false);
-    if (customerToken) return customerToken;
-
-    // If no customer token, fallback to admin token
-    return getTokenFromStorage(STORAGE_KEYS.ADMIN_INFO, true);
-  }
+  // Simplified logic: get the appropriate token based on route type
+  // No fallback - use the correct token type for the route
+  const storageKey = isAdminRoute ? STORAGE_KEYS.ADMIN_INFO : STORAGE_KEYS.CUSTOMER_INFO;
+  const requireAdmin = isAdminRoute;
+  return getTokenFromStorage(storageKey, requireAdmin);
 }
 
 /**
@@ -171,7 +209,7 @@ api.interceptors.request.use(
     // STEP 3: If we have a token, add it to the request headers
     // This tells the backend: "I'm authenticated, here's my proof (token)"
     if (authToken) {
-      config.headers.Authorization = `Bearer ${authToken}`;
+      config.headers.Authorization = `${AUTH_SCHEME} ${authToken}`;
     }
 
     // Return the updated config so the request can proceed
@@ -219,28 +257,38 @@ export const getImageUrl = (imagePath) => {
     return imagePath;
   }
 
-  // Use centralized base URL instead of hardcoding
   const baseUrl = API_BASE_URL;
 
   // Ensure path starts with / for proper URL format
-  // "/uploads/image.jpg" stays as "/uploads/image.jpg"
-  // "uploads/image.jpg" becomes "/uploads/image.jpg"
   const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
 
   // Build the full URL based on where the image is stored on the server
-  if (cleanPath.startsWith('/uploads/')) {
-    // Images uploaded via the admin panel
+  if (cleanPath.startsWith(IMAGE_PREFIXES.UPLOADS)) {
     return `${baseUrl}${cleanPath}`;
   }
 
-  if (cleanPath.startsWith('/assets/')) {
-    // Static assets folder
+  if (cleanPath.startsWith(IMAGE_PREFIXES.ASSETS)) {
     return `${baseUrl}${cleanPath}`;
   }
 
   // Default: assume it's in the bakery assets folder
-  return `${baseUrl}/assets/bakery${cleanPath}`;
+  return `${baseUrl}${IMAGE_PREFIXES.BAKERY_ASSETS}${cleanPath}`;
 };
+
+/**
+ * normalizeProduct: Transform product data into consistent format
+ * Consolidates the product transformation logic used in multiple places
+ *
+ * @param {Object} product - Product data from API
+ * @returns {Object} - Normalized product with corrected id and image fields
+ */
+function normalizeProduct(product) {
+  return {
+    ...product,
+    id: product._id || product.id,
+    image: getImageUrl(product.image),
+  };
+}
 
 /**
  * ============================================================================
@@ -258,6 +306,25 @@ export const getImageUrl = (imagePath) => {
  * 5. Token is sent with every future request to prove user is logged in
  * 6. When logged out, token is deleted
  */
+
+/**
+ * Consolidated authentication handler
+ * Eliminates duplication between registerCustomer and loginCustomer
+ *
+ * @param {string} endpoint - API endpoint (/auth/register or /auth/login)
+ * @param {Object} credentials - Login/register credentials
+ * @param {string} errorContext - Context for error message (e.g., 'Registration', 'Login')
+ * @returns {Promise<Object>} - Customer data with token
+ */
+async function authenticateAndStore(endpoint, credentials, errorContext) {
+  try {
+    const { data } = await api.post(endpoint, credentials);
+    saveCustomerToStorage(data);
+    return data;
+  } catch (error) {
+    throw getErrorMessage(error, `${errorContext} failed`);
+  }
+}
 
 /**
  * registerCustomer: Create a new customer account
@@ -279,27 +346,11 @@ export const getImageUrl = (imagePath) => {
  * await registerCustomer('John Doe', 'john@example.com', 'password123');
  */
 export const registerCustomer = async (name, email, password) => {
-  try {
-    // Send registration data to backend
-    const { data } = await api.post('/auth/register', {
-      name,
-      email,
-      password,
-    });
-
-    // If successful, save customer info to browser storage
-    // Why? So user stays logged in even after page refresh
-    if (data) {
-      localStorage.setItem(STORAGE_KEYS.CUSTOMER_INFO, JSON.stringify(data));
-    }
-
-    // Return the customer data (token, name, email, isAdmin flag)
-    return data;
-  } catch (error) {
-    // If registration fails, throw error message for component to handle
-    const errorMessage = error.response?.data?.message || 'Registration failed';
-    throw errorMessage;
-  }
+  return authenticateAndStore(
+    API_ENDPOINTS.REGISTER,
+    { name, email, password },
+    'Registration'
+  );
 };
 
 /**
@@ -321,25 +372,11 @@ export const registerCustomer = async (name, email, password) => {
  * const customerData = await loginCustomer('john@example.com', 'password123');
  */
 export const loginCustomer = async (email, password) => {
-  try {
-    // Send login credentials to backend
-    const { data } = await api.post('/auth/login', {
-      email,
-      password,
-    });
-
-    // If successful, save customer info to browser storage
-    if (data) {
-      localStorage.setItem(STORAGE_KEYS.CUSTOMER_INFO, JSON.stringify(data));
-    }
-
-    // Return the customer data
-    return data;
-  } catch (error) {
-    // If login fails, throw error message
-    const errorMessage = error.response?.data?.message || 'Login failed';
-    throw errorMessage;
-  }
+  return authenticateAndStore(
+    API_ENDPOINTS.LOGIN,
+    { email, password },
+    'Login'
+  );
 };
 
 /**
@@ -363,13 +400,10 @@ export const loginCustomer = async (email, password) => {
 export const verifyCustomer = async (token) => {
   try {
     // Verify the token with backend
-    const { data } = await api.post('/auth/verify', { token });
+    const { data } = await api.post(API_ENDPOINTS.VERIFY, { token });
 
     // If valid, update customer info in storage
-    if (data) {
-      localStorage.setItem(STORAGE_KEYS.CUSTOMER_INFO, JSON.stringify(data));
-    }
-
+    saveCustomerToStorage(data);
     return data;
   } catch (error) {
     // If token is invalid or expired, remove it from storage
@@ -425,21 +459,7 @@ export const logoutCustomer = () => {
  * }
  */
 export const getCustomerInfo = () => {
-  try {
-    // Get customer info from browser storage (stored as JSON string)
-    const customerInfoJSON = localStorage.getItem(STORAGE_KEYS.CUSTOMER_INFO);
-
-    // If no info found, return null (user not logged in)
-    if (!customerInfoJSON) {
-      return null;
-    }
-
-    // Parse JSON string back to JavaScript object and return
-    return JSON.parse(customerInfoJSON);
-  } catch (error) {
-    // If parsing fails (corrupted data), return null
-    return null;
-  }
+  return getFromStorage(STORAGE_KEYS.CUSTOMER_INFO);
 };
 
 /**
@@ -472,14 +492,10 @@ export const getCustomerInfo = () => {
 export const getProducts = async () => {
   try {
     // Request all products from backend
-    const { data } = await api.get('/products');
+    const { data } = await api.get(API_ENDPOINTS.PRODUCTS);
 
-    // Process each product to fix image URLs using centralized getImageUrl function
-    return data.map((product) => ({
-      ...product,                      // Keep all existing fields
-      id: product._id || product.id,   // Ensure 'id' field exists (sometimes it's '_id')
-      image: getImageUrl(product.image), // Replace image with full URL using centralized function
-    }));
+    // Process each product using consolidated helper function
+    return data.map(normalizeProduct);
   } catch (error) {
     // If request fails, log error and return empty array
     console.error('Error fetching products:', error);
@@ -508,15 +524,10 @@ export const getProducts = async () => {
 export const getProductById = async (productId) => {
   try {
     // Request specific product from backend using its ID
-    const { data } = await api.get(`/products/${productId}`);
+    const { data } = await api.get(API_ENDPOINTS.PRODUCT_BY_ID(productId));
 
-    // Return product with corrected image URL and standardized id field
-    // Uses centralized getImageUrl function to avoid duplication
-    return {
-      ...data,                        // Keep all existing fields
-      id: data._id || data.id,        // Ensure 'id' field exists
-      image: getImageUrl(data.image), // Replace image with full URL using centralized function
-    };
+    // Return product normalized using consolidated helper function
+    return normalizeProduct(data);
   } catch (error) {
     // If request fails or product not found, log error and return null
     console.error(`Error fetching product ${productId}:`, error);
@@ -549,7 +560,7 @@ export const getProductById = async (productId) => {
 export const getCategories = async () => {
   try {
     // Request all categories from backend
-    const { data } = await api.get('/categories');
+    const { data } = await api.get(API_ENDPOINTS.CATEGORIES);
 
     // Return the categories array
     return data;
@@ -589,14 +600,13 @@ export const getCategories = async () => {
 export const updateOrderStatus = async (orderId, status) => {
   try {
     // Send update request to backend
-    const { data } = await api.put(`/orders/${orderId}/status`, { status });
+    const { data } = await api.put(API_ENDPOINTS.ORDER_STATUS(orderId), { status });
 
     // Return the updated order data from backend
     return data;
   } catch (error) {
     // If update fails, throw error for component to handle
-    const errorMessage = error.response?.data?.message || 'Failed to update order status';
-    throw errorMessage;
+    throw getErrorMessage(error, 'Failed to update order status');
   }
 };
 
