@@ -41,7 +41,7 @@ class ErrorBoundary extends Component {
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h2>
                         <p className="text-gray-600 mb-6">We're sorry, an unexpected error occurred. Please try again.</p>
                         
-                        {process.env.NODE_ENV === 'development' && this.state.error && (
+                        {import.meta.env.DEV && this.state.error && (
                             <div className="text-left bg-gray-100 p-4 rounded text-xs overflow-auto mb-6 text-red-600 max-h-40">
                                 {this.state.error.toString()}
                             </div>
