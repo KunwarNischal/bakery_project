@@ -16,6 +16,27 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initializeAuth = () => {
             try {
+                // ALWAYS restore ACTIVE_ROLE immediately - don't wait for route detection
+                // This must happen FIRST before any API calls
+                if (!sessionStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE)) {
+                    // Try to determine role from stored tokens and route
+                    const isAdminRoute = window.location.pathname.startsWith('/admin');
+                    const hasAdminToken = !!localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
+                    const hasCustomerToken = !!localStorage.getItem(STORAGE_KEYS.CUSTOMER_TOKEN);
+
+                    if (isAdminRoute && hasAdminToken) {
+                        // Admin route + admin token = admin role
+                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');
+                    } else if (hasCustomerToken) {
+                        // Customer token exists = customer role (default)
+                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'customer');
+                    } else if (hasAdminToken) {
+                        // Only admin token = admin role
+                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');
+                    }
+                    // If no tokens at all, ACTIVE_ROLE stays unset
+                }
+
                 // Check stored customer data
                 const storedUserInfo = localStorage.getItem(STORAGE_KEYS.USER_INFO);
                 if (storedUserInfo) {
@@ -26,20 +47,6 @@ export const AuthProvider = ({ children }) => {
                 const storedAdminInfo = localStorage.getItem(STORAGE_KEYS.ADMIN_INFO);
                 if (storedAdminInfo) {
                     setAdmin(JSON.parse(storedAdminInfo));
-                }
-                // Initialize active role for this specific tab if not set
-                if (!sessionStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE)) {
-                    const isAdminRoute = window.location.pathname.startsWith('/admin');
-                    const hasAdminToken = !!localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
-                    const hasCustomerToken = !!localStorage.getItem(STORAGE_KEYS.CUSTOMER_TOKEN);
-
-                    if (isAdminRoute && hasAdminToken) {
-                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');
-                    } else if (hasCustomerToken) {
-                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'customer');
-                    } else if (hasAdminToken) {
-                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');
-                    }
                 }
             } catch {
                 // Clear potentially corrupted data

@@ -63,6 +63,17 @@ const MyOrders = () => {
         }
     }, [ordersError, navigate, addToast]);
 
+    // Listen for auth errors (token refresh failed, session expired)
+    useEffect(() => {
+        const handleAuthError = (event) => {
+            addToast(event.detail?.message || 'Session expired. Please login again.', 'error');
+            setTimeout(() => navigate('/login'), 1500);
+        };
+
+        window.addEventListener('autherror', handleAuthError);
+        return () => window.removeEventListener('autherror', handleAuthError);
+    }, [navigate, addToast]);
+
     // Use fetched orders or empty array
     const orders = fetchedOrders || [];
     const loading = ordersLoading;

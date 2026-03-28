@@ -33,7 +33,6 @@ const processQueue = (error, token = null) => {
 api.interceptors.request.use(
   (config) => {
     // Use sessionStorage.ACTIVE_ROLE (per-tab) to determine which token to use
-    // This is RELIABLE and matches response interceptor logic
     // sessionStorage is per-tab: admin tab uses admin token, customer tab uses customer token
     const activeRole = sessionStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE);
     let token = null;
@@ -41,9 +40,22 @@ api.interceptors.request.use(
     if (activeRole === 'admin') {
       // Active role is admin - use admin token
       token = localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
-    } else {
-      // Active role is customer (default) - use customer token
+    } else if (activeRole === 'customer') {
+      // Active role is customer - use customer token
       token = localStorage.getItem(STORAGE_KEYS.CUSTOMER_TOKEN);
+    } else {
+      // ACTIVE_ROLE not set yet (timing issue) - auto-detect from tokens
+      // Defensive fallback: prefer customer token if available, then admin
+      const customerToken = localStorage.getItem(STORAGE_KEYS.CUSTOMER_TOKEN);
+      const adminToken = localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
+      
+      if (customerToken) {
+        token = customerToken;
+        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'customer');
+      } else if (adminToken) {
+        token = adminToken;
+        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');
+      }
     }
     
     if (token) {
@@ -123,9 +135,18 @@ api.interceptors.response.use(
       localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_INFO);
       localStorage.removeItem(STORAGE_KEYS.ADMIN_INFO);
+      sessionStorage.removeItem(STORAGE_KEYS.ACTIVE_ROLE);
       
       // Dispatch an event so AuthContext/ProtectedRoute can redirect to login
       window.dispatchEvent(new Event('authchange'));
+      
+      // Show a user-friendly error message
+      const errorMessage = refreshError.response?.status === 401 
+        ? 'Your session has expired. Please login again.'
+        : 'Unable to refresh session. Please login again.';
+      
+      // Dispatch auth error event with message
+      window.dispatchEvent(new CustomEvent('autherror', { detail: { message: errorMessage } }));
       
       return Promise.reject(refreshError);
     } finally {

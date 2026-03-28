@@ -4,7 +4,7 @@ const User = require('../models/User');
 // Generate short-lived Access Token (15 minutes)
 const generateAccessToken = (id, isAdmin = false) => {
     return jwt.sign({ id, isAdmin }, process.env.JWT_SECRET, {
-        expiresIn: '15m',  // Short expiration for security
+        expiresIn: '1m',  // Short expiration for security
     });
 };
 

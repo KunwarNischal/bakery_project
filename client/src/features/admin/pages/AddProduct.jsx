@@ -15,12 +15,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, XCircle } from 'lucide-react';
 import api from '@/shared/services/api';
-import { useToast } from '@/shared/hooks/useToast';
+import toast from 'react-hot-toast';
 import { useFetch } from '@/shared/hooks/useFetch';
 
 const AddProduct = () => {
     const navigate = useNavigate();
-    const { addToast } = useToast();
     // Get refetchProducts function from parent AdminLayout to refresh product list
     const { refetchProducts } = useOutletContext();
     // Track image upload state
@@ -90,14 +89,16 @@ const AddProduct = () => {
             await api.post('/products', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            addToast('Product Created Successfully!', 'success');
+            toast.success('Product Created Successfully!', {
+                style: { borderRadius: '16px', background: '#3d2b1f', color: '#fff' }
+            });
 
             // Refresh products list in parent component
             await refetchProducts();
             // Redirect to products management page
             navigate('/admin/products');
         } catch (err) {
-            addToast(err.response?.data?.message || 'Failed to create product', 'error');
+            toast.error(err.response?.data?.message || 'Failed to create product');
         } finally {
             setUploading(false);
         }

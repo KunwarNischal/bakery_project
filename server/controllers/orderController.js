@@ -62,9 +62,15 @@ const getMyOrders = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
         
-        // Only fetch orders for the authenticated user - no email fallback
+        // Fetch orders for the authenticated user by:
+        // 1. userId (for orders created while logged in), OR
+        // 2. customerDetails.email (for orders created while guest/not logged in)
+        // This ensures we show all orders, whether created before or after login
         const orders = await Order.find({
-            userId: req.user._id
+            $or: [
+                { userId: req.user._id },  // Orders created while logged in
+                { 'customerDetails.email': req.user.email }  // Orders created as guest with same email
+            ]
         }).populate('orderItems.product').sort({ createdAt: -1 });
         
         res.json(orders);
@@ -72,6 +78,7 @@ const getMyOrders = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 const getOrders = async (req, res) => {
     try {
