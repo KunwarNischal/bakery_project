@@ -17,14 +17,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { useToast } from '@/shared/hooks/useToast';
-import { formatPrice } from '@/assets/data';
 import api from '@/shared/services/api';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const Checkout = () => {
-  // Get cart data and helper functions from cart context
+  // Get cart data and functions from cart context
   const { cart, subtotal, clearCart } = useCart();
-  // Get toast function from toast context
   const { addToast } = useToast();
   const navigate = useNavigate();
   const { customer: customerInfo } = useAuth();
@@ -45,6 +43,7 @@ const Checkout = () => {
   // Delivery method: either 'Local Pickup' or 'Hatemalo Delivery'
   const [deliveryMethod, setDeliveryMethod] = useState('Local Pickup');
   // Payment method: currently only 'Cash On Delivery' is supported
+  // Future: Use setPaymentMethod when multiple payment options are added
   const [paymentMethod, setPaymentMethod] = useState('Cash On Delivery');
   // Track if order is being submitted to prevent double submissions
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,7 +97,7 @@ const Checkout = () => {
         email: customerInfo.email || ''
       }));
     }
-  }, []);
+  }, [customerInfo]);
 
   // Check if customer is logged in when page loads, redirect to login if not
   useEffect(() => {
@@ -180,12 +179,11 @@ const Checkout = () => {
       };
 
       // Send order to server
-      const response = await api.post('/orders', orderData);
+      await api.post('/orders', orderData);
       
       // Clear cart and navigate to orders page on success
       addToast('Order placed successfully!');
       clearCart();
-      setIsSubmitting(false);
       
       navigate('/my-orders');
     } catch (error) {
@@ -196,6 +194,7 @@ const Checkout = () => {
       } else {
         addToast('Failed to place order. Please try again.', 'error');
       }
+    } finally {
       setIsSubmitting(false);
     }
   };
