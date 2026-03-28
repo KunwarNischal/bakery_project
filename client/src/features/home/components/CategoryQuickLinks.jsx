@@ -34,7 +34,7 @@ const CategoryQuickLinks = ({ categories }) => {
           <button
             key={cat._id || cat.id}
             onClick={() => handleCategoryClick(cat.name)}
-            className="flex flex-col items-center px-5 py-3 bg-cardBg border border-primary/10 rounded-2xl hover:bg-secondary hover:text-white hover:border-secondary hover:shadow-md transition-all duration-200 group min-w-[90px]"
+            className="flex flex-col items-center px-5 py-3 bg-cardBg border border-primary/10 rounded-2xl hover:bg-secondary hover:text-white hover:border-secondary hover:shadow-md transition-all duration-200 group min-w-22.5"
             title={cat.name}
           >
             <span className="font-semibold text-sm text-primary group-hover:text-white transition-colors">

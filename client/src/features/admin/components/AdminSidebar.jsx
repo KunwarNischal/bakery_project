@@ -43,7 +43,7 @@ const AdminSidebar = ({ setIsMenuOpen, isMenuOpen, handleLogout }) => {
 
   return (
     <>
-      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-[100]">
+      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-100">
         <div className="flex items-center gap-2">
           <img src="/logo.png" alt="Logo" className="h-8 w-8 rounded-full object-cover" />
           <span className="font-bold text-dark-brown">Hatemalo Bakery</span>
@@ -58,7 +58,7 @@ const AdminSidebar = ({ setIsMenuOpen, isMenuOpen, handleLogout }) => {
 
       <div className={`
         w-full md:w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300
-        ${isMenuOpen ? 'fixed inset-x-0 top-[57px] bottom-0 z-[90] p-6' : 'hidden md:flex p-6'}
+        ${isMenuOpen ? 'fixed inset-x-0 top-14 bottom-0 z-90 p-6' : 'hidden md:flex p-6'}
       `}>
         <Link to="/" className="hidden md:flex items-center gap-2 mb-10 overflow-hidden hover:opacity-80 transition-opacity">
           <img src="/logo.png" alt="Logo" className="h-10 w-10 rounded-full object-cover shrink-0" />

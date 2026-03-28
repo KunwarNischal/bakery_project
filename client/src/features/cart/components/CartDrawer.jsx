@@ -38,7 +38,7 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
           <button onClick={() => setIsOpen(false)} className="text-primary hover:text-secondary transition-colors text-2xl">✕</button>
         </header>
 
-        <div className="flex-grow overflow-y-auto p-8 space-y-8">
+        <div className="grow overflow-y-auto p-8 space-y-8">
           {cart.map(item => (
             <div key={item._id || item.id} className="flex gap-4 group">
               <div className="w-20 h-20 bg-cardBg rounded-2xl flex items-center justify-center text-3xl shrink-0 border border-primary/5 overflow-hidden">
@@ -48,7 +48,7 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
                   <span className="drop-shadow-sm">{item.icon || '🥐'}</span>
                 )}
               </div>
-              <div className="flex-grow">
+              <div className="grow">
                 <div className="flex justify-between mb-1">
                   <h4 className="font-bold text-primary text-sm">{item.name}</h4>
                   <button onClick={() => removeFromCart(item.id)} className="text-xs text-red-300 opacity-0 group-hover:opacity-100 transition-opacity uppercase font-bold tracking-widest hover:text-red-500">Remove</button>
@@ -56,7 +56,7 @@ const CartDrawer = ({ isOpen, setIsOpen }) => {
                 <p className="text-[10px] font-bold text-primary uppercase mb-4">{formatPrice(item.price)}</p>
                 <div className="flex items-center gap-3">
                   <button onClick={() => updateCartQty(item.id, -1)} className="w-8 h-8 rounded-lg border border-primary/10 flex items-center justify-center hover:bg-primary/5">-</button>
-                  <span className="font-bold text-sm min-w-[20px] text-center">{item.quantity}</span>
+                  <span className="font-bold text-sm min-w-5 text-center">{item.quantity}</span>
                   <button onClick={() => updateCartQty(item.id, 1)} className="w-8 h-8 rounded-lg border border-primary/10 flex items-center justify-center hover:bg-primary/5">+</button>
                 </div>
               </div>

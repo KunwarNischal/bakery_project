@@ -22,7 +22,7 @@ const Layout = ({ children }) => {
   if (isAdminRoute) {
     return (
       <div className="flex flex-col min-h-screen">
-        <main className="flex-grow">
+        <main className="grow">
           {children}
         </main>
         
@@ -49,7 +49,7 @@ const Layout = ({ children }) => {
       <CartDrawer isOpen={isCartOpen} setIsOpen={setIsCartOpen} />
 
       {/* Main Content Area - padded top to account for fixed navbar */}
-      <main className="flex-grow pt-[80px]">
+      <main className="grow pt-20">
         {children}
       </main>
 

@@ -129,7 +129,7 @@ const Navbar = ({ setIsCartOpen }) => {
               
               {isProfileOpen && (
                 <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl z-50 overflow-hidden border border-gray-100 animate-fade-in-up">
-                  <div className="bg-gradient-to-r from-light-brown/10 to-secondary/10 px-6 py-5 border-b border-gray-100">
+                  <div className="bg-linear-to-r from-light-brown/10 to-secondary/10 px-6 py-5 border-b border-gray-100">
                     <div className="flex flex-col items-center gap-3 text-center">
                       <div className="p-3 bg-light-brown/20 rounded-full text-light-brown">
                         <UserCircle size={32} />
@@ -145,9 +145,9 @@ const Navbar = ({ setIsCartOpen }) => {
                     <Link 
                       to="/my-orders" 
                       onClick={() => setIsProfileOpen(false)}
-                      className={`block px-6 py-3 font-bold text-sm flex items-center gap-3 group transition-colors rounded-lg mx-2 ${
+                      className={`px-6 py-3 font-bold text-sm flex items-center gap-3 group transition-colors rounded-lg mx-2 ${
                         location.pathname === '/my-orders'
-                          ? 'bg-gradient-to-r from-light-brown/20 to-secondary/20 text-dark-brown border-l-4 border-light-brown'
+                          ? 'bg-linear-to-r from-light-brown/20 to-secondary/20 text-dark-brown border-l-4 border-light-brown'
                           : 'text-dark-brown hover:bg-light-brown/10'
                       }`}
                     >
@@ -192,7 +192,7 @@ const Navbar = ({ setIsCartOpen }) => {
       {isMenuOpen && (
         <>
           <div className="fixed inset-0 top-28 bg-primary/10 backdrop-blur-sm z-40 md:hidden" onClick={closeMenu}></div>
-          <div className="fixed top-28 left-0 right-0 bg-background shadow-2xl z-50 md:hidden rounded-b-[2rem] border-b border-primary/5 animate-fade-in-up">
+          <div className="fixed top-28 left-0 right-0 bg-background shadow-2xl z-50 md:hidden rounded-b-4xl border-b border-primary/5 animate-fade-in-up">
             <div className="px-6 py-10 space-y-4">
               {navLinks.map(v => (
                 <Link 
