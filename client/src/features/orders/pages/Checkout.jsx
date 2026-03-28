@@ -177,12 +177,13 @@ const Checkout = () => {
       };
 
       // Send order to server
-      await api.post('/orders', orderData);
-
+      const response = await api.post('/orders', orderData);
+      
       // Clear cart and navigate to orders page on success
       addToast('Order placed successfully!');
       clearCart();
       setIsSubmitting(false);
+      
       navigate('/my-orders');
     } catch (error) {
       // Handle errors - redirect to login if session expired

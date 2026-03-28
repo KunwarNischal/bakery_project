@@ -14,28 +14,30 @@
  * If not logged in, user is redirected to login page.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Clock, CheckCircle, Truck, ShoppingBag, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
-import api from '@/shared/services/api';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getImageUrl, PLACEHOLDER_IMAGE } from '@/shared/utils/imageUtils';
 import { useFetch } from '@/shared/hooks/useFetch';
 import { ORDER_STATUSES, getStatusColor } from '@/assets/data';
+import { API_ENDPOINTS } from '@/config/constants';
 
 const MyOrders = () => {
     const navigate = useNavigate();
     // Get logged-in customer information from AuthContext
     const { customer: customerInfo } = useAuth();
-    // Fetch customer's orders from the server
-    const { data: fetchedOrders, loading: ordersLoading, error: ordersError } = useFetch('/orders/myorders');
+    // Fetch customer's orders from the server - always fetch fresh data, don't use cache
+    const { data: fetchedOrders, loading: ordersLoading, error: ordersError, refetch } = useFetch(API_ENDPOINTS.ORDERS.MY_ORDERS, { skipCache: true });
     // Search input for filtering orders by ID
     const [searchTerm, setSearchTerm] = useState('');
     // Status filter dropdown (all, Pending, Delivered, etc.)
     const [selectedStatus, setSelectedStatus] = useState('all');
     // Toggle to show all orders or just first 2
     const [showAllOrders, setShowAllOrders] = useState(false);
+    // Track if we've already refetched on mount
+    const hasRefetched = useRef(false);
 
     // Check if customer is logged in, redirect to login if not
     useEffect(() => {
@@ -43,6 +45,14 @@ const MyOrders = () => {
             navigate('/login');
         }
     }, [navigate, customerInfo]);
+
+    // Ensure orders are refetched when component mounts and customer is available
+    useEffect(() => {
+        if (customerInfo && refetch && !hasRefetched.current) {
+            hasRefetched.current = true;
+            refetch();
+        }
+    }, [customerInfo, refetch]);
 
     // Handle session expired - redirect to login if token is invalid
     useEffect(() => {
@@ -100,7 +110,7 @@ const MyOrders = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-cream via-white to-light-brown/10 pt-32 pb-12 px-4">
+        <div className="min-h-screen bg-linear-to-br from-cream via-white to-light-brown/10 pt-32 pb-12 px-4">
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-12">
                     <div>

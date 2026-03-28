@@ -19,7 +19,6 @@ class ErrorBoundary extends Component {
 
     componentDidCatch(error, errorInfo) {
         // You can also log the error to an error reporting service here (e.g. Sentry)
-        console.error("Uncaught rendering error:", error, errorInfo);
         this.setState({ errorInfo });
     }
 

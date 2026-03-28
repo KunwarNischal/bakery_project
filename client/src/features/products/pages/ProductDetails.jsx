@@ -39,30 +39,47 @@ const ProductDetails = () => {
 
   // Calculate related products - other items in same category
   const relatedProducts = useMemo(() => {
-    if (!product || !products) return [];
+    if (!product || !products || !products.length) return [];
 
-    // First, try to get products from same category
-    let related = products.filter(p =>
-      p.category === product.category && p._id !== product._id && p.id !== product.id
-    );
+    // Helper to compare IDs safely as strings
+    const areIdsEqual = (id1, id2) => {
+      if (!id1 || !id2) return false;
+      return id1.toString() === id2.toString();
+    };
 
-    // If less than 4, add featured products
+    // Current product ID for exclusion
+    const productId = product._id || product.id;
+    // Current product category ID for matching
+    const catId = product.categoryId || product.category;
+
+    // 1. First, try to get products from same category ID
+    let related = products.filter(p => {
+      const pId = p._id || p.id;
+      const pCatId = p.categoryId || p.category;
+      return areIdsEqual(pCatId, catId) && !areIdsEqual(pId, productId);
+    });
+
+    // 2. If less than 4, add featured products as fallback
     if (related.length < 4) {
-      const featured = products.filter(p =>
-        p.featured && p._id !== product._id && p.id !== product.id
-      );
-      related = [...related, ...featured].slice(0, 4);
+      const featured = products.filter(p => {
+        const pId = p._id || p.id;
+        return p.featured && !areIdsEqual(pId, productId) && !related.some(r => areIdsEqual(r._id || r.id, pId));
+      });
+      related = [...related, ...featured];
     }
 
-    // If still less than 4, add other products
+    // 3. If still less than 4, add any other products to fill the space
     if (related.length < 4) {
-      const others = products.filter(p =>
-        p._id !== product._id && p.id !== product.id && !related.find(r => r._id === p._id)
-      );
-      related = [...related, ...others].slice(0, 4);
+      const others = products.filter(p => {
+        const pId = p._id || p.id;
+        return !areIdsEqual(pId, productId) && !related.some(r => areIdsEqual(r._id || r.id, pId));
+      });
+      // Shuffle others briefly to keep it interesting
+      const shuffledOthers = [...others].sort(() => 0.5 - Math.random());
+      related = [...related, ...shuffledOthers];
     }
 
-    return related;
+    return related.slice(0, 4);
   }, [product, products]);
 
   // Fetch product data when component loads or product ID changes
@@ -180,7 +197,7 @@ const ProductDetails = () => {
                   <span className="text-4xl block mb-4 group-hover:scale-110 transition-transform">{p.icon}</span>
                 )}
                 <h4 className="font-bold text-primary text-sm mb-1">{p.name}</h4>
-                <p className="text-secondary font-bold text-xs">Rs. {p.price}</p>
+                <p className="text-secondary font-bold text-xs">{formatPrice(p.price)}</p>
               </div>
             ))}
           </div>

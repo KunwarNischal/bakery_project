@@ -1,9 +1,24 @@
 const Category = require('../models/Category');
+const Product = require('../models/Product');
 
 const getCategories = async (req, res) => {
     try {
         const categories = await Category.find({}).sort({ name: 1 });
-        res.json(categories);
+
+        // Count products matching either categoryId or category name string
+        const categoriesWithCount = await Promise.all(
+            categories.map(async (cat) => {
+                const itemCount = await Product.countDocuments({
+                    $or: [
+                        { categoryId: cat._id },
+                        { category: cat.name }
+                    ]
+                });
+                return { ...cat.toObject(), itemCount };
+            })
+        );
+
+        res.json(categoriesWithCount);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
@@ -75,7 +90,6 @@ const updateCategory = async (req, res) => {
             res.status(404).json({ message: 'Category not found' });
         }
     } catch (error) {
-        console.error('Update category error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 };

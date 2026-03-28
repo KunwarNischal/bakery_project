@@ -76,7 +76,7 @@ const Navbar = ({ setIsCartOpen }) => {
    * Handle customer logout - clear session and update UI
    */
   const handleCustomerLogout = () => {
-    logout();
+    logout('customer');
     addToast('See you soon! 👋');
     setIsProfileOpen(false);
     closeMenu();
@@ -117,7 +117,7 @@ const Navbar = ({ setIsCartOpen }) => {
             <div ref={profileRef} className="relative">
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="px-4 py-2 bg-gradient-to-r from-light-brown to-secondary text-white rounded-full transition-all flex items-center gap-2 font-bold text-sm shadow-lg hover:shadow-xl hover:from-dark-brown hover:to-secondary hover:-translate-y-0.5 duration-300"
+                className="px-4 py-2 bg-linear-to-r from-light-brown to-secondary text-white rounded-full transition-all flex items-center gap-2 font-bold text-sm shadow-lg hover:shadow-xl hover:from-dark-brown hover:to-secondary hover:-translate-y-0.5 duration-300"
                 title="Profile"
               >
                 <UserCircle size={18} className="text-white/90" />
@@ -133,7 +133,7 @@ const Navbar = ({ setIsCartOpen }) => {
                       </div>
                       <div className="w-full">
                         <p className="font-bold text-dark-brown text-base leading-tight truncate">{customerInfo.name}</p>
-                        <p className="text-xs text-gray-500 break-words mt-1">{customerInfo.email}</p>
+                        <p className="text-xs text-gray-500 wrap-break-word mt-1">{customerInfo.email}</p>
                       </div>
                     </div>
                   </div>

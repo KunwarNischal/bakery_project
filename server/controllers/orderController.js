@@ -58,17 +58,17 @@ const addOrderItems = async (req, res) => {
 
 const getMyOrders = async (req, res) => {
     try {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
         
+        // Only fetch orders for the authenticated user - no email fallback
         const orders = await Order.find({
-            $or: [
-                { userId: req.user._id },
-                { 'customerDetails.email': req.user.email }
-            ]
-        }).sort({ createdAt: -1 });
+            userId: req.user._id
+        }).populate('orderItems.product').sort({ createdAt: -1 });
         
         res.json(orders);
     } catch (error) {
-        console.error('Error fetching myorders:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -137,7 +137,6 @@ const generateOrderNumber = async () => {
 
         return orderNumber;
     } catch (error) {
-        console.error('Error generating order number:', error);
         throw new Error('Failed to generate order number');
     }
 };

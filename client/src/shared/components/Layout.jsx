@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import CartDrawer from '@/features/cart/components/CartDrawer';
+import Toast from './Toast';
+import { useCart } from '@/features/cart/hooks/useCart';
 
 /**
  * Main application layout wrapper
@@ -12,6 +14,7 @@ import CartDrawer from '@/features/cart/components/CartDrawer';
 const Layout = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const location = useLocation();
+  const { toasts } = useCart();
 
   // Check if we are on an admin route
   const isAdminRoute = location.pathname.startsWith('/admin');
@@ -22,6 +25,17 @@ const Layout = ({ children }) => {
         <main className="flex-grow">
           {children}
         </main>
+        
+        {/* Toast Container - Top Right Corner */}
+        <div className="fixed top-20 right-4 z-50 space-y-3 max-w-sm">
+          {toasts.map(toast => (
+            <Toast
+              key={toast.id}
+              message={toast.message}
+              type={toast.type}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -41,6 +55,17 @@ const Layout = ({ children }) => {
 
       {/* Global Footer */}
       <Footer />
+      
+      {/* Toast Container - Top Right Corner */}
+      <div className="fixed top-20 right-4 z-50 space-y-3 max-w-sm">
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+          />
+        ))}
+      </div>
     </div>
   );
 };

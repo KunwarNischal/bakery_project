@@ -11,7 +11,6 @@ export const syncCartWithServer = async (cartItems) => {
         const { data } = await api.post('/cart/sync', { items: cartItems });
         return data;
     } catch (error) {
-        console.error("Failed to sync cart", error);
         throw error;
     }
 };

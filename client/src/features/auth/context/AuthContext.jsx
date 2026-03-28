@@ -29,8 +29,21 @@ export const AuthProvider = ({ children }) => {
                 if (storedAdminInfo) {
                     setAdmin(JSON.parse(storedAdminInfo));
                 }
+                // Initialize active role for this specific tab if not set
+                if (!sessionStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE)) {
+                    const isAdminRoute = window.location.pathname.startsWith('/admin');
+                    const hasAdminToken = !!localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
+                    const hasCustomerToken = !!localStorage.getItem(STORAGE_KEYS.CUSTOMER_TOKEN);
+
+                    if (isAdminRoute && hasAdminToken) {
+                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');
+                    } else if (hasCustomerToken) {
+                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'customer');
+                    } else if (hasAdminToken) {
+                        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');
+                    }
+                }
             } catch (error) {
-                console.error("Failed to parse stored auth data:", error);
                 // Clear potentially corrupted data
                 localStorage.removeItem(STORAGE_KEYS.USER_INFO);
                 localStorage.removeItem(STORAGE_KEYS.ADMIN_INFO);
@@ -47,9 +60,11 @@ export const AuthProvider = ({ children }) => {
                 setCustomer(e.newValue ? JSON.parse(e.newValue) : null);
             } else if (e.key === STORAGE_KEYS.ADMIN_INFO) {
                 setAdmin(e.newValue ? JSON.parse(e.newValue) : null);
-            } else if (e.key === STORAGE_KEYS.AUTH_TOKEN && !e.newValue) {
-                // If token is cleared from another tab, logout locally
+            } else if (e.key === STORAGE_KEYS.CUSTOMER_TOKEN && !e.newValue) {
+                // If customer token is cleared, logout customer
                 setCustomer(null);
+            } else if (e.key === STORAGE_KEYS.ADMIN_TOKEN && !e.newValue) {
+                // If admin token is cleared, logout admin
                 setAdmin(null);
             }
         };
@@ -71,17 +86,24 @@ export const AuthProvider = ({ children }) => {
     /**
      * Handle login for either user or admin
      * @param {Object} userData - The user data from the backend
-     * @param {string} token - JWT token
+     * @param {string} token - JWT token (accessToken for new system, token for backward compatibility)
      * @param {string} role - 'customer' or 'admin'
      */
     const login = useCallback((userData, token, role = 'customer') => {
-        // Save the token regardless of role
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+        // Use accessToken if available (new system), otherwise use token (backward compatibility)
+        const accessToken = userData.accessToken || token || userData.token;
+        
+        if (!accessToken) {
+            return;
+        }
 
+        // Save the token with role-specific key
         if (role === 'admin') {
+            localStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, accessToken);
             setAdmin(userData);
             localStorage.setItem(STORAGE_KEYS.ADMIN_INFO, JSON.stringify(userData));
         } else {
+            localStorage.setItem(STORAGE_KEYS.CUSTOMER_TOKEN, accessToken);
             setCustomer(userData);
             localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userData));
         }
@@ -98,21 +120,17 @@ export const AuthProvider = ({ children }) => {
         if (role === 'all' || role === 'customer') {
             setCustomer(null);
             localStorage.removeItem(STORAGE_KEYS.USER_INFO);
+            localStorage.removeItem(STORAGE_KEYS.CUSTOMER_TOKEN);
         }
         
         if (role === 'all' || role === 'admin') {
             setAdmin(null);
             localStorage.removeItem(STORAGE_KEYS.ADMIN_INFO);
-        }
-
-        // If logging out of all, or logging out of the only active session, remove token
-        if (role === 'all' || (!admin && role === 'customer') || (!customer && role === 'admin')) {
-            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-            localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN); // If implementing refresh tokens
+            localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
         }
 
         window.dispatchEvent(new Event('authchange'));
-    }, [customer, admin]);
+    }, []);
 
     /**
      * Optional: Async verify function to check token validity on the server
@@ -120,7 +138,11 @@ export const AuthProvider = ({ children }) => {
      */
     const verify = useCallback(async (verifyApiCall) => {
         try {
-            const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+            // Check for either customer or admin token
+            const customerToken = localStorage.getItem(STORAGE_KEYS.CUSTOMER_TOKEN);
+            const adminToken = localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
+            const token = adminToken || customerToken;
+            
             if (!token) throw new Error("No token found");
             
             // Assume verifyApiCall makes the HTTP request with the token and throws if invalid

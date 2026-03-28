@@ -31,6 +31,6 @@ export const logoutUser = async () => {
     try {
         await api.post('/auth/logout');
     } catch (error) {
-        console.error("Logout API failed, continuing client logout.");
+        // Logout API may fail but we still continue with client logout
     }
 };

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../shared/components/ProtectedRoute';
 import Loader from '../shared/components/Loader';
 
@@ -40,7 +40,10 @@ const AppRoutes = () => {
         {/* Auth Routes */}
         <Route path="/login" element={<CustomerLogin />} />
         <Route path="/register" element={<CustomerRegister />} />
-        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        
+        {/* Admin Redirect - /admin should go to dashboard */}
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         
         {/* Protected Customer Routes */}
         <Route element={<ProtectedRoute />}>

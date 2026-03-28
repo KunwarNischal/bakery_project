@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getIconForCategory } from '@/assets/data';
+
 
 const CategoryQuickLinks = ({ categories, onCategorySelect }) => {
   // Use navigate hook to go to menu page
@@ -26,23 +26,27 @@ const CategoryQuickLinks = ({ categories, onCategorySelect }) => {
     if (onCategorySelect) {
       onCategorySelect(categoryName);
     }
-    // Navigate to menu page to show products from this category
-    navigate('/menu');
+    // Navigate to menu page with category as query parameter
+    navigate(`/menu?category=${encodeURIComponent(categoryName)}`);
   };
 
   return (
     <section className="py-20 px-6 max-w-7xl mx-auto">
       <h2 className="font-display text-3xl font-bold text-center mb-12 text-primary">Browse by Category</h2>
-      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-4">
+      <div className="flex flex-wrap justify-center gap-3">
         {categories.map(cat => (
-          <button 
-            key={cat._id || cat.id} 
+          <button
+            key={cat._id || cat.id}
             onClick={() => handleCategoryClick(cat.name)}
-            className="flex flex-col items-center gap-3 p-4 bg-cardBg rounded-2xl border border-primary/5 hover:border-secondary hover:shadow-lg transition-all group"
+            className="flex flex-col items-center px-5 py-3 bg-cardBg border border-primary/10 rounded-2xl hover:bg-secondary hover:text-white hover:border-secondary hover:shadow-md transition-all duration-200 group min-w-[90px]"
             title={cat.name}
           >
-            <span className="text-3xl group-hover:scale-125 transition-transform">{getIconForCategory(cat.name)}</span>
-            <span className="text-[8px] font-bold uppercase tracking-widest text-primary text-center">{cat.name}</span>
+            <span className="font-semibold text-sm text-primary group-hover:text-white transition-colors">
+              {cat.name}
+            </span>
+            <span className="text-[10px] text-secondary group-hover:text-white/80 transition-colors mt-0.5">
+              {cat.itemCount ?? 0} Items
+            </span>
           </button>
         ))}
       </div>

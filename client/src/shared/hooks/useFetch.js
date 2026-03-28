@@ -58,7 +58,6 @@ export const useFetch = (url, options = {}) => {
       }
     } catch (err) {
       if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
-        console.log(`Request canceled: ${url}`);
         return;
       }
       if (isMounted.current) {

@@ -28,7 +28,7 @@ export const API_ENDPOINTS = {
     AUTH: {
         LOGIN_CUSTOMER: '/auth/login',
         REGISTER_CUSTOMER: '/auth/register',
-        LOGIN_ADMIN: '/auth/login',
+        LOGIN_ADMIN: '/auth/admin-login',
         VERIFY: '/auth/verify',
     },
     // Products
@@ -49,8 +49,8 @@ export const API_ENDPOINTS = {
 };
 
 export const STORAGE_KEYS = {
-    AUTH_TOKEN: 'auth_token',
-    REFRESH_TOKEN: 'refresh_token',
+    CUSTOMER_TOKEN: 'customer_token',
+    ADMIN_TOKEN: 'admin_token',
     USER_INFO: 'user_info',
     ADMIN_INFO: 'admin_info',
     CART_ITEMS: 'cart_items',

@@ -11,32 +11,32 @@
  * with a sticky sidebar for easy filtering.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ProductCard from '@/features/products/components/ProductCard';
-import { formatPrice } from '@/assets/data';
 import { Search } from 'lucide-react';
 
 import { useProducts } from '@/features/products/hooks/useProducts';
 import { useCategories } from '@/features/products/hooks/useCategories';
 
-const Menu = ({ selectedCategory }) => {
+const Menu = () => {
   const { products: fetchedProducts } = useProducts();
   const { categories: fetchedCategories } = useCategories();
+  const [searchParams] = useSearchParams();
   
   const products = fetchedProducts || [];
   const categories = fetchedCategories || [];
   
+  // Get category from URL query parameter or props
+  const categoryFromUrl = searchParams.get('category');
+  
   // Maximum price filter for the range slider (₨ 3000)
   const [priceRange, setPriceRange] = useState(3000);
-  // Currently selected category filter
-  const [selectedCat, setSelectedCat] = useState(selectedCategory || null);
-
-  // Update selected category when the prop changes (e.g., from quick links)
-  useEffect(() => {
-    if (selectedCategory) {
-      setSelectedCat(selectedCategory);
-    }
-  }, [selectedCategory]);
+  // Currently selected category filter from sidebar (local selection)
+  const [selectedCat, setSelectedCat] = useState(null);
+  
+  // The category to actually use for filtering: URL param takes priority, then sidebar selection
+  const displayedCat = categoryFromUrl || selectedCat;
 
   // Search input text for filtering by product name
   const [search, setSearch] = useState('');
@@ -44,7 +44,7 @@ const Menu = ({ selectedCategory }) => {
   // Filter products based on search, category, and price
   const filtered = products.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCat = selectedCat ? (p.category === selectedCat || p.categoryId === selectedCat) : true;
+    const matchesCat = displayedCat ? (p.category === displayedCat || p.categoryId === displayedCat) : true;
     const matchesPrice = p.price <= priceRange;
     return matchesSearch && matchesCat && matchesPrice;
   });
@@ -63,7 +63,7 @@ const Menu = ({ selectedCategory }) => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 animate-fade-in-up mt-20">
       <h1 className="text-4xl font-bold text-primary text-center mb-10">Our Menu</h1>
       <div className="flex flex-col lg:flex-row gap-8">
-      <aside className="lg:w-1/4 h-fit lg:sticky lg:top-24 flex-shrink-0">
+      <aside className="lg:w-1/4 h-fit lg:sticky lg:top-24 shrink-0">
         <div className="bg-cardBg p-6 rounded-3xl shadow-xl border border-primary/5">
           <h2 className="text-xl font-bold text-primary mb-4">Categories</h2>
 
@@ -97,7 +97,7 @@ const Menu = ({ selectedCategory }) => {
           <div className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible lg:max-h-[60vh] lg:overflow-y-auto pb-4 lg:pb-0 scrollbar-hide">
             <button 
               onClick={() => handleCategoryChange(null)}
-              className={`flex-shrink-0 lg:w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${!selectedCat ? 'bg-primary text-white shadow-md' : 'text-primary hover:bg-primary/5'}`}
+              className={`shrink-0 lg:w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${!displayedCat ? 'bg-primary text-white shadow-md' : 'text-primary hover:bg-primary/5'}`}
             >
               All items
             </button>
@@ -105,7 +105,7 @@ const Menu = ({ selectedCategory }) => {
               <button 
                 key={cat._id || cat.id || cat.name}
                 onClick={() => handleCategoryChange(cat.name)}
-                className={`flex-shrink-0 lg:w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${selectedCat === cat.name ? 'bg-primary text-white shadow-md' : 'text-primary hover:bg-primary/5'}`}
+                className={`shrink-0 lg:w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${displayedCat === cat.name ? 'bg-primary text-white shadow-md' : 'text-primary hover:bg-primary/5'}`}
               >
                 {cat.name} items
               </button>
@@ -137,8 +137,8 @@ const Menu = ({ selectedCategory }) => {
         )}
       </div>
     </div>
-  </div>
-);
+    </div>
+  );
 }
 
 export default Menu;

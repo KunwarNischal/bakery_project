@@ -16,11 +16,12 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { loginAdmin } from '@/features/auth/services/authService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import toast from 'react-hot-toast';
+import { useCart } from '@/features/cart/hooks/useCart';
 
 const AdminLogin = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { addToast } = useCart();
     // State to toggle password visibility
     const [showPassword, setShowPassword] = useState(false);
     // Store authentication error from server
@@ -84,23 +85,21 @@ const AdminLogin = () => {
 
             // Check if user is an admin
             if (data.isAdmin) {
-                // Call context login
-                login(data, data.token, 'admin');
+                // Call context login - accepts both accessToken (new) and token (backward compat)
+                login(data, data.accessToken || data.token, 'admin');
 
-                toast.success(`Welcome back, ${data.name}!`);
-                // Navigate to admin dashboard
-                setTimeout(() => {
-                    navigate('/admin/dashboard');
-                }, 100);
+                addToast(`Welcome back, ${data.name}!`, 'success');
+                // Navigate to admin dashboard immediately
+                navigate('/admin/dashboard');
             } else {
                 // User exists but is not an admin
                 setAuthError('Not authorized as an admin');
-                toast.error('Not authorized as an admin');
+                addToast('Not authorized as an admin', 'error');
             }
         } catch (err) {
             const msg = err.response?.data?.message || 'Invalid credentials';
             setAuthError(msg);
-            toast.error(msg);
+            addToast(msg, 'error');
         } finally {
             setIsSubmitting(false);
         }

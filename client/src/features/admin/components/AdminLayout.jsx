@@ -18,8 +18,8 @@ import { useNavigate, Outlet } from 'react-router-dom';
 import api from '@/shared/services/api';
 import { useFetch } from '@/shared/hooks/useFetch';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useCart } from '@/features/cart/hooks/useCart';
 import DeleteModal from '@/features/admin/components/DeleteModal';
-import toast from 'react-hot-toast';
 import AdminSidebar from './AdminSidebar';
 import CategoryModal from './CategoryModal';
 
@@ -29,16 +29,17 @@ const AdminLayout = () => {
     const navigate = useNavigate();
 
     // Check admin session on component mount
-    const { isAdminAuthenticated } = useAuth();
+    const { isAdminAuthenticated, logout } = useAuth();
+    const { addToast } = useCart();
     
     useEffect(() => {
         if (!isAdminAuthenticated) {
             // Show error message if session expired or not an admin
-            toast.error('Session expired. Please login again.');
+            addToast('Session expired. Please login again.', 'error');
             // Redirect to admin login
-            navigate('/admin');
+            navigate('/admin/login');
         }
-    }, [isAdminAuthenticated, navigate]);
+    }, [isAdminAuthenticated, navigate, addToast]);
 
 
     // State for mobile menu visibility
@@ -156,12 +157,10 @@ const AdminLayout = () => {
             // Execute the delete API call
             await executeDelete(id, type);
             // Show success message
-            toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, {
-                style: { borderRadius: '16px', background: '#3d2b1f', color: '#fff' }
-            });
+            addToast(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
         } catch (err) {
             // Show error message if delete fails
-            toast.error(err.response?.data?.message || `Failed to delete ${type}`);
+            addToast(err.response?.data?.message || `Failed to delete ${type}`, 'error');
         }
         // Close the modal
         setDeleteModal({ ...deleteModal, isOpen: false });
@@ -172,12 +171,12 @@ const AdminLayout = () => {
      * Handle admin logout - clear session and redirect to login
      */
     const handleLogout = () => {
-        // Remove admin session from storage
-        localStorage.removeItem('userInfo');
+        // Logout only the admin session using auth context
+        logout('admin');
         // Show success message
-        toast.success('Logged out successfully');
+        addToast('Logged out successfully', 'success');
         // Redirect to admin login page
-        navigate('/admin');
+        navigate('/admin/login');
     };
 
     /**
@@ -192,11 +191,11 @@ const AdminLayout = () => {
             if (isCategoryEdit) {
                 // Update existing category
                 const { data } = await api.put(`/categories/${editingCategory._id}`, { name: newCategory });
-                toast.success('Category updated!');
+                addToast('Category updated!', 'success');
             } else {
                 // Create new category
                 const { data } = await api.post('/categories', { name: newCategory });
-                toast.success('Category created!');
+                addToast('Category created!', 'success');
             }
             // Refresh category list
             await refetchCategories();
@@ -209,7 +208,7 @@ const AdminLayout = () => {
             setEditingCategory(null);
         } catch (err) {
             // Show error message if submission fails
-            toast.error(err.response?.data?.message || `Failed to ${isCategoryEdit ? 'update' : 'add'} category`);
+            addToast(err.response?.data?.message || `Failed to ${isCategoryEdit ? 'update' : 'add'} category`, 'error');
         }
     };
 

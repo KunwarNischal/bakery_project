@@ -1,4 +1,3 @@
-import { useCallback, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -14,21 +13,7 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
     const location = useLocation();
 
     // Verify token validity occasionally (optional enhancement)
-    // Uncomment this if you implement the verify function fully
-    /*
-    useEffect(() => {
-        const checkToken = async () => {
-            try {
-                await verify();
-            } catch (err) {
-                // If verification fails, AuthContext handles logout automatically
-                console.error("Session invalid");
-            }
-        };
-        // Maybe only check periodically or on first mount
-    }, [verify]);
-    */
-
+    
     // If route requires admin but user isn't an admin
     if (requireAdmin && !isAdminAuthenticated) {
         // They might be a regular customer trying to access admin

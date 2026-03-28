@@ -13,14 +13,15 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import { User, Eye, EyeOff } from 'lucide-react';
 import { loginCustomer } from '@/features/auth/services/authService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useCart } from '@/features/cart/hooks/useCart';
 
 const CustomerLogin = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { addToast } = useCart();
     // State to toggle between showing and hiding password
     const [showPassword, setShowPassword] = useState(false);
 
@@ -86,16 +87,23 @@ const CustomerLogin = () => {
             // Send login request to server
             const data = await loginCustomer(formData.email, formData.password);
             
-            // Call context login
-            login(data, data.token, 'customer');
+            // Check if the user is actually an admin
+            if (data.isAdmin === true) {
+                addToast('Admin accounts must use the admin login portal', 'error');
+                setAuthError('Admin accounts must use the admin login portal');
+                navigate('/admin/login');
+                return;
+            }
             
-            toast.success('Welcome back!');
-            // Navigate to orders page after successful login
+            // Call context login - accepts both accessToken (new) and token (backward compat)
+            login(data, data.accessToken || data.token, 'customer');
+            
+            addToast('Welcome back!', 'success');
             navigate('/my-orders');
         } catch (error) {
-            const msg = error.response?.data?.message || error?.message || 'Login failed';
+            const msg = error.response?.data?.message || 'Invalid credentials';
             setAuthError(msg);
-            toast.error(msg);
+            addToast(msg, 'error');
         } finally {
             setIsSubmitting(false);
         }

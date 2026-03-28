@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const connectDB = require('./config/db');
 require('dotenv').config();
@@ -16,6 +17,7 @@ connectDB();
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(cookieParser());  // Middleware to parse cookies
 
 const corsOptions = {
     origin: function (origin, callback) {
@@ -56,12 +58,10 @@ app.get('/', (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-    console.error(err.stack);
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-});
+app.listen(PORT, () => {});
 
 
