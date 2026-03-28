@@ -327,13 +327,29 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
 **Features**:
 - Checks admin authentication on mount (redirects if not admin)
 - Renders admin sidebar with navigation
-- Fetches products, orders, categories data
+- Fetches products, orders, categories data with `skipCache: true` for token validation on every request
 - Manages modal states (category add/edit, delete confirmation)
 - Provides data to admin pages via context/props
 - Shows loading/error states
 - Has retry mechanism for failed data fetches
 
 **Props**: None (uses Outlet for nested routes)
+
+**Data Fetching Pattern**:
+```javascript
+// Uses skipCache: true to ensure token validation on every request
+// This prevents "Error loading data" after token expires
+const { data: productsData, ... } = useFetch('/products', { skipCache: true });
+const { data: ordersData, ... } = useFetch('/orders', { skipCache: true });
+const { data: categoriesData, ... } = useFetch('/categories', { skipCache: true });
+```
+
+**Why skipCache: true?**
+- Ensures token is validated with every API call (not just once at page load)
+- When token expires, 401 error is caught immediately by interceptor
+- Interceptor calls `/auth/refresh` to get new token automatically
+- Dashboard stays current even during extended sessions
+- Matches customer-side pattern (MyOrders.jsx uses same approach)
 
 **State Management**:
 - Products, orders, categories arrays
@@ -988,6 +1004,35 @@ if (!isRefreshing) {
   });
 }
 ```
+
+**Token Validation Pattern - skipCache in Admin Pages**:
+
+To ensure token validation happens on every request (not just cached responses), admin pages use `skipCache: true`:
+
+```javascript
+// AdminLayout.jsx - Forces fresh token validation on every API call
+const { data: productsData, ... } = useFetch('/products', { skipCache: true });
+const { data: ordersData, ... } = useFetch('/orders', { skipCache: true });
+const { data: categoriesData, ... } = useFetch('/categories', { skipCache: true });
+
+// MyOrders.jsx - Customer side follows same pattern
+const { data: orders, ... } = useFetch('/my-orders', { skipCache: true });
+```
+
+**Why skipCache: true for sensitive data?**
+- Query caching normally prevents duplicate requests (performance optimization)
+- But cached responses don't trigger token validation
+- If token expires while cache is active, old data is served with expired token
+- Using `skipCache: true` ensures:
+  - Every request validates current token
+  - Expired tokens caught immediately (returns 401)
+  - Fresh token automatically obtained via `/auth/refresh`
+  - User stays logged in seamlessly during long sessions
+
+This pattern is critical for:
+- Admin dashboards (financial data, sensitive operations)
+- Personal order history (user-specific data)
+- Any endpoint where stale data with invalid token is dangerous
 
 ### Logout Flow
 
