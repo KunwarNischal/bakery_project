@@ -1411,31 +1411,47 @@ When multiple components mount and both call `useFetch('/products')`:
 
 **Component**: `shared/components/ErrorBoundary.jsx`
 
-Catches any errors thrown in component tree and displays fallback UI:
+Catches any errors thrown in component tree and displays fallback UI with development error details:
 ```javascript
 class ErrorBoundary extends React.Component {
-  state = { hasError: false, error: null };
+  state = { hasError: false, error: null, errorInfo: null };
   
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
   
-  componentDidCatch(error, info) {
-    // Log error details for debugging
-    console.error('Error caught:', error, info);
+  componentDidCatch(error, errorInfo) {
+    // Log error details (can be sent to error reporting service)
+    this.setState({ errorInfo });
   }
   
   handleRetry = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    window.location.reload();
   }
   
   render() {
     if (this.state.hasError) {
       return (
-        <div className="error-message">
-          <h1>Something went wrong</h1>
-          <p>{this.state.error?.message}</p>
-          <button onClick={this.handleRetry}>Try Again</button>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" /* error icon */></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h2>
+            <p className="text-gray-600 mb-6">We're sorry, an unexpected error occurred. Please try again.</p>
+            
+            {/* Show error details only in development (using Vite's import.meta.env.DEV) */}
+            {import.meta.env.DEV && this.state.error && (
+              <div className="text-left bg-gray-100 p-4 rounded text-xs overflow-auto mb-6 text-red-600 max-h-40">
+                {this.state.error.toString()}
+              </div>
+            )}
+            
+            <button onClick={this.handleRetry} className="bg-primary text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+              Refresh Page
+            </button>
+          </div>
         </div>
       );
     }
