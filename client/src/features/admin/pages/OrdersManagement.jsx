@@ -169,7 +169,7 @@ const OrdersManagement = () => {
                         day: 'numeric'
                       })}
                     </td>
-                    <td className="p-3 font-bold text-sm text-dark-brown">₨{order.totalAmount}</td>
+                    <td className="p-3 font-bold text-sm text-dark-brown">₨ {order.totalAmount}</td>
                     <td className="p-3">
                       <span className="inline-block px-2 py-0.5 rounded-lg font-bold text-xs uppercase tracking-wider bg-blue-100 text-blue-700">
                         {order.paymentMethod}

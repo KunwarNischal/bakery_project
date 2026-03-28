@@ -51,7 +51,8 @@ const loginCustomerUser = async (req, res) => {
             const refreshToken = generateRefreshToken(user._id, user.isAdmin);
             
             // Set Refresh Token as httpOnly cookie (secure against XSS)
-            res.cookie('refreshToken', refreshToken, {
+            // Use separate cookie for customer to avoid overwriting admin refresh token
+            res.cookie('refreshTokenCustomer', refreshToken, {
                 httpOnly: true,           // Cannot be accessed by JavaScript (XSS safe)
                 secure: process.env.NODE_ENV === 'production',  // Only HTTPS in production
                 sameSite: 'strict',       // CSRF protection
@@ -96,7 +97,8 @@ const loginAdminUser = async (req, res) => {
             const refreshToken = generateRefreshToken(user._id, user.isAdmin);
             
             //Set Refresh Token as httpOnly cookie
-            res.cookie('refreshToken', refreshToken, {
+            // Use separate cookie for admin to avoid overwriting customer refresh token
+            res.cookie('refreshTokenAdmin', refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
@@ -144,7 +146,8 @@ const registerUser = async (req, res) => {
             const refreshToken = generateRefreshToken(user._id, user.isAdmin);
             
             // Set Refresh Token as httpOnly cookie
-            res.cookie('refreshToken', refreshToken, {
+            // New registrations are always customers, so use refreshTokenCustomer
+            res.cookie('refreshTokenCustomer', refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
@@ -199,11 +202,17 @@ const verifyUser = async (req, res) => {
     }
 };
 
-// Logout Handler - Clears the refresh token cookie
+// Logout Handler - Clears the refresh token cookies
 const logoutUser = async (req, res) => {
     try {
-        // Clear the refresh token cookie
-        res.clearCookie('refreshToken', {
+        // Clear both admin and customer refresh token cookies
+        res.clearCookie('refreshTokenAdmin', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+        });
+        res.clearCookie('refreshTokenCustomer', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
@@ -219,7 +228,9 @@ const logoutUser = async (req, res) => {
 // Refresh Token Handler - Issues new Access Token using Refresh Token from cookie
 const refreshAccessToken = async (req, res) => {
     try {
-        const refreshToken = req.cookies.refreshToken;
+        // Check for either admin or customer refresh token
+        // Admin tab has refreshTokenAdmin, Customer tab has refreshTokenCustomer
+        const refreshToken = req.cookies.refreshTokenAdmin || req.cookies.refreshTokenCustomer;
 
         if (!refreshToken) {
             return res.status(401).json({ message: 'No refresh token provided' });

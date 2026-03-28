@@ -191,11 +191,11 @@ const AdminLayout = () => {
         try {
             if (isCategoryEdit) {
                 // Update existing category
-                const { data } = await api.put(`/categories/${editingCategory._id}`, { name: newCategory });
+                await api.put(`/categories/${editingCategory._id}`, { name: newCategory });
                 addToast('Category updated!', 'success');
             } else {
                 // Create new category
-                const { data } = await api.post('/categories', { name: newCategory });
+                await api.post('/categories', { name: newCategory });
                 addToast('Category created!', 'success');
             }
             // Refresh category list
@@ -281,15 +281,33 @@ const AdminLayout = () => {
                             <div>
                                 <p className="font-semibold">Error loading data</p>
                                 <p className="text-sm">{typeof error === 'string' ? error : error?.toString()}</p>
-                                {typeof error === 'string' && error.includes('401') && <p className="text-xs mt-1">Your session may have expired. Try logging in again.</p>}
+                                {typeof error === 'string' && (error.includes('401') || error.includes('authorized')) && (
+                                    <div className="text-xs mt-2 space-y-1">
+                                        <p className="font-medium">Your admin session has expired or is invalid.</p>
+                                        <p>Please log in again to continue.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap text-sm font-medium"
-                        >
-                            Retry
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap text-sm font-medium"
+                            >
+                                Retry
+                            </button>
+                            {typeof error === 'string' && (error.includes('401') || error.includes('authorized')) && (
+                                <button
+                                    onClick={() => {
+                                        logout('admin');
+                                        navigate('/admin/login');
+                                    }}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap text-sm font-medium"
+                                >
+                                    Login Again
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 

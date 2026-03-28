@@ -55,6 +55,7 @@ export const STORAGE_KEYS = {
     ADMIN_INFO: 'admin_info',
     CART_ITEMS: 'cart_items',
     THEME: 'theme_preference',
+    ACTIVE_ROLE: 'active_role',  // sessionStorage only - tracks which role is active in this tab
 };
 
 // Object containing both the display value and the UI styling

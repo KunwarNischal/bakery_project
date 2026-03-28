@@ -41,8 +41,7 @@ export const AuthProvider = ({ children }) => {
                         sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');
                     }
                 }
-            } catch (error) {
-                console.error("Failed to parse stored auth data:", error);
+            } catch {
                 // Clear potentially corrupted data
                 localStorage.removeItem(STORAGE_KEYS.USER_INFO);
                 localStorage.removeItem(STORAGE_KEYS.ADMIN_INFO);
@@ -93,7 +92,6 @@ export const AuthProvider = ({ children }) => {
         const accessToken = userData.accessToken || token || userData.token;
         
         if (!accessToken) {
-            console.error('No access token provided to login function');
             return;
         }
 
