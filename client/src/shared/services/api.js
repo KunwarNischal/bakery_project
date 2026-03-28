@@ -129,27 +129,11 @@ api.interceptors.response.use(
         throw new Error('No access token in refresh response');
       }
       
-      // Update the token based on the endpoint being called (not global ACTIVE_ROLE)
-      // Determine which token to update based on the original request URL and method
-      const url = originalRequest.url || '';
-      const method = originalRequest.method || 'GET';
+      // Update the token based on the current active role in this tab
+      // ACTIVE_ROLE tracks which role is active in THIS browser tab (sessionStorage)
+      const activeRole = sessionStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE);
       
-      // Use same logic as request interceptor to determine if admin or customer
-      let isAdminRoute = false;
-      
-      if (url.includes('/admin')) {
-        isAdminRoute = true;
-      } else if (url.includes('/categories')) {
-        isAdminRoute = true;
-      } else if (url.includes('/my-orders')) {
-        isAdminRoute = false;
-      } else if (url.includes('/products')) {
-        isAdminRoute = method !== 'GET' || url.match(/\/products\/\d+$/) === null;
-      } else if (url.includes('/orders')) {
-        isAdminRoute = method !== 'POST';
-      }
-      
-      if (isAdminRoute) {
+      if (activeRole === 'admin') {
         localStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, accessToken);
       } else {
         localStorage.setItem(STORAGE_KEYS.CUSTOMER_TOKEN, accessToken);
