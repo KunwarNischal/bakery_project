@@ -3,9 +3,8 @@
  * 
  * This file contains purely UI-related data and formatting functions.
  * All product and category names/prices are now fetched dynamically from the database.
+ * Note: formatPrice has been moved to shared/utils/formatters.js for centralized formatting.
  */
-
-export const formatPrice = (price) => `Rs ${Number(price).toFixed(2)}`;
 
 /**
  * Icons mapped by Category Name

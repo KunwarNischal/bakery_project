@@ -22,7 +22,7 @@ import { useCart } from '@/features/cart/hooks/useCart';
 import { getProductById } from '@/features/products/services/productService';
 import { useProducts } from '@/features/products/hooks/useProducts';
 import { useCategories } from '@/features/products/hooks/useCategories';
-import { formatPrice } from '@/assets/data';
+import { formatPrice } from '@/shared/utils/formatters';
 
 const ProductDetails = () => {
   const { products: fetchedProducts } = useProducts();
@@ -114,7 +114,7 @@ const ProductDetails = () => {
       </button>
 
       <div className="bg-cardBg rounded-[4rem] overflow-hidden border border-primary/5 shadow-2xl flex flex-col lg:flex-row">
-        <div className="lg:w-1/2 p-2 sm:p-4 flex items-center justify-center bg-background overflow-hidden relative min-h-[400px]">
+        <div className="lg:w-1/2 p-2 sm:p-4 flex items-center justify-center bg-background overflow-hidden relative min-h-100">
           {product.image ? (
             <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-[3rem] animate-fade-in-up" />
           ) : (
@@ -160,7 +160,7 @@ const ProductDetails = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => addToCart(product)}
-              className="flex-grow py-5 bg-primary text-white font-bold rounded-2xl hover:bg-secondary transition-all uppercase tracking-widest text-xs shadow-xl"
+              className="grow py-5 bg-primary text-white font-bold rounded-2xl hover:bg-secondary transition-all uppercase tracking-widest text-xs shadow-xl"
             >
               Add to Cart
             </button>

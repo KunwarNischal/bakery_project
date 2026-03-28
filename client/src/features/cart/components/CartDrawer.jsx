@@ -15,7 +15,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/features/cart/hooks/useCart';
-import { formatPrice } from '@/assets/data';
+import { formatPrice } from '@/shared/utils/formatters';
 
 const CartDrawer = ({ isOpen, setIsOpen }) => {
   // Get cart data and functions from cart context
