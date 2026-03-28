@@ -57,11 +57,11 @@ const MyOrders = () => {
 
     // Handle session expired - redirect to login if token is invalid
     useEffect(() => {
-        if (addToast('Session expired. Please login again.', 'error');
+        if (ordersError) {
+            addToast('Session expired. Please login again.', 'error');
             navigate('/login');
         }
-    }, [ordersError, navigate, addToast
-    }, [ordersError, navigate]);
+    }, [ordersError, navigate, addToast]);
 
     // Use fetched orders or empty array
     const orders = fetchedOrders || [];
