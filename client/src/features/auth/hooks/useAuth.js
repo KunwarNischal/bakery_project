@@ -10,8 +10,7 @@ import { AuthContext } from '@/features/auth/context/authContextValue';
  *   isAuthenticated,
  *   isAdminAuthenticated,
  *   login,
- *   logout,
- *   verify
+ *   logout
  * }
  */
 export const useAuth = () => {

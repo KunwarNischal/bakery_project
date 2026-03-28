@@ -2,17 +2,14 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { ROUTES } from '@/config/constants';
-import Loader from './Loader';
 
 /**
  * Route protector component that checks authentication state
  * and redirects unauthenticated users or users with wrong roles.
  */
 const ProtectedRoute = ({ requireAdmin = false }) => {
-    const { isAuthenticated, isAdminAuthenticated, verify } = useAuth();
+    const { isAuthenticated, isAdminAuthenticated } = useAuth();
     const location = useLocation();
-
-    // Verify token validity occasionally (optional enhancement)
     
     // If route requires admin but user isn't an admin
     if (requireAdmin && !isAdminAuthenticated) {

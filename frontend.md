@@ -54,9 +54,9 @@ client/src/
 │   │   └── services/
 │   │       └── adminService.js       # Admin API calls
 │   ├── auth/                         # Authentication feature
-│   │   ├── components/               # (empty - auth UI on pages)
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx       # Global auth state (customer + admin)
+│   │   │   ├── AuthContext.jsx       # Auth provider component only
+│   │   │   └── authContextValue.js   # Context creation (for React Fast Refresh)
 │   │   ├── hooks/
 │   │   │   └── useAuth.js            # Custom hook for auth context
 │   │   ├── pages/
@@ -69,7 +69,8 @@ client/src/
 │   │   ├── components/
 │   │   │   └── CartDrawer.jsx        # Sliding cart panel
 │   │   ├── context/
-│   │   │   └── CartContext.jsx       # Global cart state + toast notifications
+│   │   │   ├── CartContext.jsx       # Cart provider component only
+│   │   │   └── cartContextValue.js   # Context creation (for React Fast Refresh)
 │   │   ├── hooks/
 │   │   │   └── useCart.js            # Custom hook for cart context
 │   │   └── services/
@@ -87,8 +88,6 @@ client/src/
 │   │       ├── Contact.jsx           # Contact page
 │   │       └── Story.jsx             # About story page
 │   ├── orders/                       # Order management feature
-│   │   ├── components/               # (empty)
-│   │   ├── hooks/                    # (empty)
 │   │   ├── pages/
 │   │   │   ├── Checkout.jsx          # Order checkout page
 │   │   │   └── MyOrders.jsx          # Customer order history
@@ -307,7 +306,6 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
 - Redirects to login if not authenticated
 - Redirects to admin login if trying to access admin route without admin status
 - Allows admins to access customer routes if needed
-- Shows loading spinner while checking auth
 
 **Props**:
 - `requireAdmin` (bool) - Whether route requires admin status (default: false)
@@ -366,7 +364,7 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
 
 | Hook Name | File Path | Purpose | Parameters | Return Values | Usage Example |
 |---|---|---|---|---|---|
-| `useAuth` | `features/auth/hooks/useAuth.js` | Access auth context safely | None | `{ customer, admin, isAuthenticated, isAdminAuthenticated, login, logout, verify }` | `const { customer, logout } = useAuth()` |
+| `useAuth` | `features/auth/hooks/useAuth.js` | Access auth context safely | None | `{ customer, admin, isAuthenticated, isAdminAuthenticated, login, logout }` | `const { customer, logout } = useAuth()` |
 | `useCart` | `features/cart/hooks/useCart.js` | Access cart context and functionality | None | `{ cart, addToCart, removeFromCart, updateCartQty, clearCart, subtotal, addToast, toasts }` | `const { cart, addToCart } = useCart()` |
 | `useFetch` | `shared/hooks/useFetch.js` | Fetch API data with caching and cancellation | `url` (string), `options` (object with skipCache, swr) | `{ data, loading, error, refetch, setData }` | `const { data: products } = useFetch('/products')` |
 | `useProducts` | `features/products/hooks/useProducts.js` | Fetch and manage products list | None | `{ products, loading, error, refetch }` | `const { products } = useProducts()` |
@@ -377,6 +375,8 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
 
 #### **useAuth Hook** (`features/auth/hooks/useAuth.js`)
 ```javascript
+import { AuthContext } from '@/features/auth/context/authContextValue';
+
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined || context === null) {
@@ -385,7 +385,7 @@ export const useAuth = () => {
     return context;
 };
 ```
-**Purpose**: Safe accessor for auth context
+**Purpose**: Safe accessor for auth context (imports from authContextValue.js for clean separation)
 
 **Returns**:
 ```javascript
@@ -395,16 +395,17 @@ export const useAuth = () => {
   isAuthenticated: boolean,           // !!customer
   isAdminAuthenticated: boolean,      // !!admin
   login: (userData, token, role) => void,
-  logout: (role) => void,
-  verify: (verifyApiCall) => Promise
+  logout: (role) => void
 }
 ```
 
 #### **useCart Hook** (`features/cart/hooks/useCart.js`)
 ```javascript
+import { CartContext } from '@/features/cart/context/cartContextValue';
+
 export const useCart = () => useContext(CartContext);
 ```
-**Purpose**: Simple accessor for cart context
+**Purpose**: Simple accessor for cart context (imports from cartContextValue.js for clean separation)
 
 **Returns**:
 ```javascript
@@ -509,8 +510,8 @@ const handleFetch = () => refetch(false);
 
 ### Architecture Overview
 The frontend uses **React Context API** for centralized state management. Two main contexts handle the two core domains:
-1. **AuthContext** (`features/auth/context/AuthContext.jsx`) - Manages authentication state for both customers and admins
-2. **CartContext** (`features/cart/context/CartContext.jsx`) - Manages shopping cart and toast notifications
+1. **AuthContext** (`features/auth/context/authContextValue.js` + `AuthContext.jsx`) - Manages authentication state for both customers and admins
+2. **CartContext** (`features/cart/context/cartContextValue.js` + `CartContext.jsx`) - Manages shopping cart and toast notifications
 
 This approach allows components anywhere in the tree to access state without prop drilling, while keeping state co-located with business logic.
 
@@ -518,16 +519,36 @@ This approach allows components anywhere in the tree to access state without pro
 
 | Context | File | Purpose | Provided Values | Consumer Components |
 |---|---|---|---|---|
-| **AuthContext** | `features/auth/context/AuthContext.jsx` | Dual auth state (customer + admin), login/logout logic | `customer` (object/null), `admin` (object/null), `isAuthenticated`, `isAdminAuthenticated`, `login()`, `logout()`, `verify()` | useAuth hook → all pages, Navbar, protected routes |
-| **CartContext** | `features/cart/context/CartContext.jsx` | Shopping cart items, cart operations, toast notifications | `cart` (array), `addToCart()`, `removeFromCart()`, `updateCartQty()`, `clearCart()`, `subtotal` (number), `addToast()`, `toasts` (array) | useCart hook → ProductCard, CartDrawer, Checkout, ProductDetails |
+| **AuthContext** | `features/auth/context/authContextValue.js` + `AuthContext.jsx` | Dual auth state (customer + admin), login/logout logic | `customer` (object/null), `admin` (object/null), `isAuthenticated`, `isAdminAuthenticated`, `login()`, `logout()` | useAuth hook → all pages, Navbar, protected routes |
+| **CartContext** | `features/cart/context/cartContextValue.js` + `CartContext.jsx` | Shopping cart items, cart operations, toast notifications | `cart` (array), `addToCart()`, `removeFromCart()`, `updateCartQty()`, `clearCart()`, `subtotal` (number), `addToast()`, `toasts` (array) | useCart hook → ProductCard, CartDrawer, Checkout, ProductDetails |
 
 ### AuthContext Implementation Details
 
+**Architecture**: To comply with React Fast Refresh requirements, context creation and provider components are separated:
+- `authContextValue.js` - Exports `const AuthContext = createContext()` only (not a component)
+- `AuthContext.jsx` - Exports `AuthProvider` component that wraps children with context (re-exports context for backward compatibility)
+
 ```javascript
-// Provider structure
-<AuthProvider>
-  {children}
-</AuthProvider>
+// authContextValue.js - Context creation only
+export const AuthContext = createContext();
+
+// AuthContext.jsx - Provider component
+export const AuthProvider = ({ children }) => {
+  // State and logic
+  const [customer, setCustomer] = useState(null);
+  const [admin, setAdmin] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // ... initialization and methods
+  
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export { AuthContext };  // Re-export for backward compatibility
 
 // Provided state and methods
 const [customer, setCustomer] = useState(null);      // Customer user object or null
@@ -537,7 +558,6 @@ const [loading, setLoading] = useState(true);        // Initial load state
 // Provided functions
 login(userData, token, role = 'customer')   // Store user data and role-specific token
 logout(role = 'all')                         // Clear user data and tokens
-verify(verifyApiCall)                        // Optional token verification
 ```
 
 **Initialization Flow**:
@@ -563,11 +583,30 @@ verify(verifyApiCall)                        // Optional token verification
 
 ### CartContext Implementation Details
 
+**Architecture**: To comply with React Fast Refresh requirements, context creation and provider components are separated:
+- `cartContextValue.js` - Exports `const CartContext = createContext()` only (not a component)
+- `CartContext.jsx` - Exports `CartProvider` component that wraps children with context (re-exports context for backward compatibility)
+
 ```javascript
-// Provider structure
-<CartProvider>
-  {children}
-</CartProvider>
+// cartContextValue.js - Context creation only
+export const CartContext = createContext();
+
+// CartContext.jsx - Provider component
+export const CartProvider = ({ children }) => {
+  // State and logic
+  const [cart, setCart] = useState([]);
+  const [toasts, setToasts] = useState([]);
+  
+  // ... initialization and methods
+  
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
+  );
+};
+
+export { CartContext };  // Re-export for backward compatibility
 
 // Provided state and methods
 const [cart, setCart] = useState([])         // Array of { id, name, price, quantity, ... }

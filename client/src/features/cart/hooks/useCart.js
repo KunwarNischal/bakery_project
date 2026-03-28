@@ -28,7 +28,7 @@
  */
 
 import { useContext } from 'react';
-import { CartContext } from '@/features/cart/context/CartContext';
+import { CartContext } from '@/features/cart/context/cartContextValue';
 
 export const useCart = () => useContext(CartContext);
 

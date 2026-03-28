@@ -9,9 +9,8 @@
  * - Provides functions to add, update, and remove items from cart
  */
 
-import React, { createContext, useState, useEffect } from 'react';
-
-export const CartContext = createContext();
+import React, { useState, useEffect } from 'react';
+import { CartContext } from './cartContextValue';
 
 export const CartProvider = ({ children }) => {
 
@@ -131,4 +130,7 @@ export const CartProvider = ({ children }) => {
     </CartContext.Provider>
   );
 };
+
+// Re-export CartContext for backward compatibility
+export { CartContext };
 

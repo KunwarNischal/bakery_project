@@ -139,29 +139,6 @@ export const AuthProvider = ({ children }) => {
         window.dispatchEvent(new Event('authchange'));
     }, []);
 
-    /**
-     * Optional: Async verify function to check token validity on the server
-     * Can be invoked by protected routes on mount to ensure session is still valid globally
-     */
-    const verify = useCallback(async (verifyApiCall) => {
-        try {
-            // Check for either customer or admin token
-            const customerToken = localStorage.getItem(STORAGE_KEYS.CUSTOMER_TOKEN);
-            const adminToken = localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
-            const token = adminToken || customerToken;
-            
-            if (!token) throw new Error("No token found");
-            
-            // Assume verifyApiCall makes the HTTP request with the token and throws if invalid
-            const response = await verifyApiCall();
-            return response.data;
-        } catch (error) {
-            // If verification fails, forcefully log everything out
-            logout('all');
-            throw error;
-        }
-    }, [logout]);
-
     const contextValue = {
         customer,
         admin,
@@ -169,7 +146,6 @@ export const AuthProvider = ({ children }) => {
         isAdminAuthenticated: !!admin,
         login,
         logout,
-        verify,
     };
 
     if (loading) {

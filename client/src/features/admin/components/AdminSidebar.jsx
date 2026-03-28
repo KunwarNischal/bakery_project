@@ -66,21 +66,24 @@ const AdminSidebar = ({ setIsMenuOpen, isMenuOpen, handleLogout }) => {
         </Link>
 
         <nav className="flex-1 space-y-2">
-          {navItems.map(({ path, label, icon: Icon }) => (
-            <Link
-              key={path}
-              to={path}
-              onClick={handleNavClick}
-              className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
-                isActive(path)
-                  ? 'bg-light-brown text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Icon size={20} className="mr-3" />
-              {label}
-            </Link>
-          ))}
+          {navItems.map(({ path, label, icon }) => {
+            const Icon = icon;
+            return (
+              <Link
+                key={path}
+                to={path}
+                onClick={handleNavClick}
+                className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
+                  isActive(path)
+                    ? 'bg-light-brown text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Icon size={20} className="mr-3" />
+                {label}
+              </Link>
+            );
+          })}
           <button
             onClick={() => {
               handleLogout();
