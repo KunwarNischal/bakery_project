@@ -32,47 +32,17 @@ const processQueue = (error, token = null) => {
 // Request Interceptor: Attach Access Token
 api.interceptors.request.use(
   (config) => {
-    // Determine which token to use based on the ENDPOINT being called, not a global setting
-    // This ensures each tab uses the correct token regardless of what other tabs are doing
-    const url = config.url || '';
-    const method = (config.method || 'GET').toUpperCase();  // Normalize to uppercase
+    // Use sessionStorage.ACTIVE_ROLE (per-tab) to determine which token to use
+    // This is RELIABLE and matches response interceptor logic
+    // sessionStorage is per-tab: admin tab uses admin token, customer tab uses customer token
+    const activeRole = sessionStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE);
     let token = null;
 
-    // Admin endpoints:
-    // - /admin/* (all admin routes)
-    // - GET /products, PUT /products, DELETE /products (product management)
-    // - /categories/* (category management)
-    // - GET /orders (get all orders - admin view), PUT /orders/:id/status, DELETE /orders/:id
-    
-    // Customer endpoints:
-    // - POST /orders (place new order) - explicitly a customer endpoint
-    // - /orders/my-orders (customer's own orders)
-    
-    // Determine if this is an admin route
-    let isAdminRoute = false;
-    
-    if (url.includes('/admin')) {
-      isAdminRoute = true;
-    } else if (url.includes('/categories')) {
-      isAdminRoute = true;
-    } else if (url.includes('/my-orders')) {
-      isAdminRoute = false;
-    } else if (url.includes('/products')) {
-      // GET /products (list) = customer, but PUT/DELETE = admin
-      // POST /products = admin, GET /products/:id = customer
-      isAdminRoute = method !== 'GET' || url.match(/\/products\/\d+$/) === null;
-    } else if (url.includes('/orders')) {
-      // POST /orders (create order) = customer
-      // GET /orders (list all) = admin
-      // PUT /orders/:id/status, DELETE /orders/:id = admin
-      isAdminRoute = method !== 'POST';
-    }
-
-    if (isAdminRoute) {
-      // Admin endpoint - use admin token
+    if (activeRole === 'admin') {
+      // Active role is admin - use admin token
       token = localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
     } else {
-      // Customer endpoint - use customer token
+      // Active role is customer (default) - use customer token
       token = localStorage.getItem(STORAGE_KEYS.CUSTOMER_TOKEN);
     }
     
