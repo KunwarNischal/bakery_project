@@ -1437,6 +1437,18 @@ enum: ['Pending', 'Preparing', 'Processing', 'Shipped', 'Delivered', 'Cancelled'
 // Sets invalid value raises Mongoose validation error
 ```
 
+**Phone Number Validation**:
+```javascript
+// Frontend enforces: Nepali mobile format (second digit must be 6-9)
+// Accepted formats: 9841234567, 9744567890, +9779841234567
+// Rejected: 1234567890 (doesn't start with 9), 9041234567 (second digit 0-5 invalid)
+// Regex: ^(\+977)?[9][6-9]\d{8}$
+// Covers operators: Ncell (984), NTC/Ntc (974), etc.
+// Backend: Accepts string format from frontend, no additional validation
+const phone = customerDetails.phone; // e.g., "9841234567"
+// Stored as-is in database for order records
+```
+
 ---
 
 ## 10. Environment Variables

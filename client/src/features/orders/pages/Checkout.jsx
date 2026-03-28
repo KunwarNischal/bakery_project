@@ -66,7 +66,7 @@ const Checkout = () => {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email address';
 
     if (!formData.phone) newErrors.phone = 'Phone number is required';
-    else if (!/^\d{10}/.test(formData.phone)) newErrors.phone = 'Please enter a valid phone number';
+    else if (!/^(\+977)?[9][6-9]\d{8}$/.test(formData.phone.replace(/[-\s]/g, ''))) newErrors.phone = 'Please enter a valid Nepali phone number';
 
     if (!formData.city) newErrors.city = 'City is required';
 
@@ -79,7 +79,7 @@ const Checkout = () => {
     let errorMsg = '';
     if (field === 'firstName' && (!value || value.length < 2)) errorMsg = 'Name must be at least 2 characters';
     if (field === 'email' && (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))) errorMsg = 'Please enter a valid email address';
-    if (field === 'phone' && (!value || !/^\d{10}/.test(value))) errorMsg = 'Please enter a valid phone number';
+    if (field === 'phone' && (!value || !/^(\+977)?[9][6-9]\d{8}$/.test(value.replace(/[-\s]/g, '')))) errorMsg = 'Please enter a valid Nepali phone number';
     if (field === 'city' && !value) errorMsg = 'City is required';
 
     setErrors(prev => ({

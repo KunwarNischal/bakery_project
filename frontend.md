@@ -1987,6 +1987,11 @@ const validate = () => {
   if (!email.includes('@')) newErrors.email = 'Invalid email format';
   if (!password) newErrors.password = 'Password is required';
   if (password.length < 6) newErrors.password = 'Min 6 characters';
+  if (!phone) newErrors.phone = 'Phone number is required';
+  // Nepali format: Must start with 9, second digit 6-9 (operator prefix)
+  if (!/^(\+977)?[9][6-9]\d{8}$/.test(phone.replace(/[-\s]/g, ''))) {
+    newErrors.phone = 'Please enter a valid Nepali phone number';
+  }
   
   return newErrors;
 };
@@ -2005,9 +2010,18 @@ const handleSubmit = (e) => {
 
 // In JSX:
 {errors.email && <span className="text-red-500">{errors.email}</span>}
+{errors.phone && <span className="text-red-500">{errors.phone}</span>}
 ```
 
-**Result**: Lightweight validation, ~20 lines per form, no dependencies added.
+**Result**: Lightweight validation, ~20-25 lines per form, no dependencies added.
+
+**Phone Number Format (Checkout.jsx)**:
+- Nepali mobile format: 10 digits starting with 9
+- **Second digit must be 6-9** (operator prefix: Ncell 98x, NTC 97x, etc.)
+- Optional +977 country code
+- Multiple formats accepted: `9841234567`, `9744567890`, `+9779841234567`
+- Invalid: `1234567890`, `9041234567` (second digit 0-5), fewer/more than 10 digits
+- Real-time validation on blur + form submission validation
 
 ---
 
