@@ -17,10 +17,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, UserCircle, Package } from 'lucide-react';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useToast } from '@/shared/hooks/useToast';
 
 const Navbar = ({ setIsCartOpen }) => {
-  // Get cart data and toast function from cart context
-  const { cart, addToast } = useCart();
+  // Get cart data from cart context
+  const { cart } = useCart();
+  // Get toast function from toast context
+  const { addToast } = useToast();
   // Get current page location to highlight active nav link
   const location = useLocation();
   // Navigation utility hook
@@ -77,7 +80,7 @@ const Navbar = ({ setIsCartOpen }) => {
    */
   const handleCustomerLogout = () => {
     logout('customer');
-    addToast('See you soon! 👋');
+    addToast('See you soon! 👋', 'success');
     setIsProfileOpen(false);
     closeMenu();
     navigate('/');

@@ -16,13 +16,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/features/cart/hooks/useCart';
+import { useToast } from '@/shared/hooks/useToast';
 import { formatPrice } from '@/assets/data';
 import api from '@/shared/services/api';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const Checkout = () => {
-  // Get cart data, helper functions from cart context
-  const { cart, subtotal, clearCart, addToast } = useCart();
+  // Get cart data and helper functions from cart context
+  const { cart, subtotal, clearCart } = useCart();
+  // Get toast function from toast context
+  const { addToast } = useToast();
   const navigate = useNavigate();
   const { customer: customerInfo } = useAuth();
 

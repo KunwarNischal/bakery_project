@@ -17,8 +17,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Clock, CheckCircle, Truck, ShoppingBag, Search } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useToast } from '@/shared/hooks/useToast';
 import { getImageUrl, PLACEHOLDER_IMAGE } from '@/shared/utils/imageUtils';
 import { useFetch } from '@/shared/hooks/useFetch';
 import { ORDER_STATUSES, getStatusColor } from '@/assets/data';
@@ -26,6 +26,7 @@ import { API_ENDPOINTS } from '@/config/constants';
 
 const MyOrders = () => {
     const navigate = useNavigate();
+    const { addToast } = useToast();
     // Get logged-in customer information from AuthContext
     const { customer: customerInfo } = useAuth();
     // Fetch customer's orders from the server - always fetch fresh data, don't use cache
@@ -56,10 +57,10 @@ const MyOrders = () => {
 
     // Handle session expired - redirect to login if token is invalid
     useEffect(() => {
-        if (ordersError && ordersError.includes('401')) {
-            toast.error('Session expired. Please login again.');
+        if (addToast('Session expired. Please login again.', 'error');
             navigate('/login');
         }
+    }, [ordersError, navigate, addToast
     }, [ordersError, navigate]);
 
     // Use fetched orders or empty array

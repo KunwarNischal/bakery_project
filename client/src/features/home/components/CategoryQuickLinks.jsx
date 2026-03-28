@@ -13,19 +13,15 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
-const CategoryQuickLinks = ({ categories, onCategorySelect }) => {
+const CategoryQuickLinks = ({ categories }) => {
   // Use navigate hook to go to menu page
   const navigate = useNavigate();
 
   /**
-   * Handle category click - calls parent callback if provided and navigates to menu
+   * Handle category click - navigates to menu page with selected category
    * @param {string} categoryName - Name of the selected category
    */
   const handleCategoryClick = (categoryName) => {
-    // Call parent callback to set selected category filter
-    if (onCategorySelect) {
-      onCategorySelect(categoryName);
-    }
     // Navigate to menu page with category as query parameter
     navigate(`/menu?category=${encodeURIComponent(categoryName)}`);
   };

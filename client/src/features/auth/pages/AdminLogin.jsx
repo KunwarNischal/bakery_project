@@ -16,12 +16,12 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { loginAdmin } from '@/features/auth/services/authService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useCart } from '@/features/cart/hooks/useCart';
+import { useToast } from '@/shared/hooks/useToast';
 
 const AdminLogin = () => {
     const navigate = useNavigate();
+    const { addToast } = useToast();
     const { login } = useAuth();
-    const { addToast } = useCart();
     // State to toggle password visibility
     const [showPassword, setShowPassword] = useState(false);
     // Store authentication error from server
@@ -130,7 +130,7 @@ const AdminLogin = () => {
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     {authError && (
                         <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium">
-                            {authError}
+                            {typeof authError === 'string' ? authError : authError?.toString()}
                         </div>
                     )}
                     <div>

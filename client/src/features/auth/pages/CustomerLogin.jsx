@@ -16,12 +16,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, Eye, EyeOff } from 'lucide-react';
 import { loginCustomer } from '@/features/auth/services/authService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useCart } from '@/features/cart/hooks/useCart';
+import { useToast } from '@/shared/hooks/useToast';
 
 const CustomerLogin = () => {
     const navigate = useNavigate();
+    const { addToast } = useToast();
     const { login } = useAuth();
-    const { addToast } = useCart();
     // State to toggle between showing and hiding password
     const [showPassword, setShowPassword] = useState(false);
 
@@ -124,7 +124,7 @@ const CustomerLogin = () => {
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     {authError && (
                         <div className="bg-red-50 text-red-600 p-2 rounded-xl text-xs font-medium">
-                            {authError}
+                            {typeof authError === 'string' ? authError : authError?.toString()}
                         </div>
                     )}
 

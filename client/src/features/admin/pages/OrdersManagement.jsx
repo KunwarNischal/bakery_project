@@ -19,9 +19,10 @@ import { useOutletContext } from 'react-router-dom';
 import { getImageUrl } from '@/shared/utils/imageUtils';
 import { ORDER_STATUSES } from '@/assets/data';
 import { updateOrderStatus } from '@/features/orders/services/orderService';
-import toast from 'react-hot-toast';
+import { useToast } from '@/shared/hooks/useToast';
 
 const OrdersManagement = () => {
+  const { addToast } = useToast();
   // Get context data from parent AdminLayout
   const context = useOutletContext();
   // Track which order is expanded for details
@@ -56,9 +57,9 @@ const OrdersManagement = () => {
       await updateOrderStatus(orderId, newStatus);
       // Update local state to reflect change immediately
       setOrders(orders => orders.map(o => o._id === orderId ? { ...o, orderStatus: newStatus } : o));
-      toast.success('Order status updated!');
+      addToast('Order status updated!', 'success');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update order status');
+      addToast(err.response?.data?.message || 'Failed to update order status', 'error');
     }
   };
 

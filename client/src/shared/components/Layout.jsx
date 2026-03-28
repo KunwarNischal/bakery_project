@@ -4,7 +4,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import CartDrawer from '@/features/cart/components/CartDrawer';
 import Toast from './Toast';
-import { useCart } from '@/features/cart/hooks/useCart';
+import { useToast } from '@/shared/hooks/useToast';
 
 /**
  * Main application layout wrapper
@@ -14,7 +14,7 @@ import { useCart } from '@/features/cart/hooks/useCart';
 const Layout = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const location = useLocation();
-  const { toasts } = useCart();
+  const { toasts } = useToast();
 
   // Check if we are on an admin route
   const isAdminRoute = location.pathname.startsWith('/admin');

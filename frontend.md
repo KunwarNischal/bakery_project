@@ -195,7 +195,7 @@ client/src/
 | **ProductCard** | `features/products/components/ProductCard.jsx` | Product display card | `product` (object), `categoryName` (string) | ProductList, FeaturedProducts | Shows product with image/icon, name, price; navigates to details on click; adds to cart |
 | **CartDrawer** | `features/cart/components/CartDrawer.jsx` | Sliding cart panel | `isOpen` (bool), `onClose` (function) | Layout | Lists cart items with qty controls; shows subtotal; links to checkout |
 | **Hero** | `features/home/components/Hero.jsx` | Hero banner section | None | Home | Hero banner with background, heading, CTA button |
-| **CategoryQuickLinks** | `features/home/components/CategoryQuickLinks.jsx` | Category navigation buttons | None | Home | Displays clickable category pills; navigates to /menu with category filter |
+| **CategoryQuickLinks** | `features/home/components/CategoryQuickLinks.jsx` | Category navigation buttons | `categories` (array) | Home | Displays clickable category pills; navigates to /menu with category filter |
 | **FeaturedProducts** | `features/home/components/FeaturedProducts.jsx` | Featured products carousel | None | Home | Shows featured items in grid/carousel; uses ProductCard |
 | **Testimonials** | `features/home/components/Testimonials.jsx` | Customer testimonials section | None | Home | Displays customer reviews/testimonials |
 | **AdminLayout** | `features/admin/components/AdminLayout.jsx` | Admin dashboard layout | None (outlets admin pages) | Routes for /admin/\* | Renders sidebar, manages admin modal states, fetches admin data (products, orders, categories) |
@@ -208,7 +208,8 @@ client/src/
 #### **Navbar Component** (`shared/components/Navbar.jsx`)
 ```javascript
 const Navbar = ({ setIsCartOpen }) => {
-  const { cart, addToast } = useCart();
+  const { cart } = useCart();
+  const { addToast } = useToast();
   const { customer: customerInfo, logout } = useAuth();
   // Features: mobile menu, profile dropdown, cart badge, nav links, logout
 }
@@ -365,7 +366,8 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
 | Hook Name | File Path | Purpose | Parameters | Return Values | Usage Example |
 |---|---|---|---|---|---|
 | `useAuth` | `features/auth/hooks/useAuth.js` | Access auth context safely | None | `{ customer, admin, isAuthenticated, isAdminAuthenticated, login, logout }` | `const { customer, logout } = useAuth()` |
-| `useCart` | `features/cart/hooks/useCart.js` | Access cart context and functionality | None | `{ cart, addToCart, removeFromCart, updateCartQty, clearCart, subtotal, addToast, toasts }` | `const { cart, addToCart } = useCart()` |
+| `useCart` | `features/cart/hooks/useCart.js` | Access cart context and cart operations | None | `{ cart, addToCart, removeFromCart, updateCartQty, clearCart, subtotal }` | `const { cart, addToCart } = useCart()` |
+| `useToast` | `shared/hooks/useToast.js` | Show toast notifications | None | `{ addToast }` | `const { addToast } = useToast()` |
 | `useFetch` | `shared/hooks/useFetch.js` | Fetch API data with caching and cancellation | `url` (string), `options` (object with skipCache, swr) | `{ data, loading, error, refetch, setData }` | `const { data: products } = useFetch('/products')` |
 | `useProducts` | `features/products/hooks/useProducts.js` | Fetch and manage products list | None | `{ products, loading, error, refetch }` | `const { products } = useProducts()` |
 | `useCategories` | `features/products/hooks/useCategories.js` | Fetch and manage categories list | None | `{ categories, loading, error, refetch }` | `const { categories } = useCategories()` |
@@ -405,7 +407,7 @@ import { CartContext } from '@/features/cart/context/cartContextValue';
 
 export const useCart = () => useContext(CartContext);
 ```
-**Purpose**: Simple accessor for cart context (imports from cartContextValue.js for clean separation)
+**Purpose**: Accessor for cart context (imports from cartContextValue.js for clean separation)
 
 **Returns**:
 ```javascript
@@ -415,9 +417,28 @@ export const useCart = () => useContext(CartContext);
   removeFromCart: (id) => void,
   updateCartQty: (id, delta) => void,
   clearCart: () => void,
-  subtotal: number,
-  addToast: (message, type) => void,       // Shows toast notification
-  toasts: [{ id, message, type }, ...]
+  subtotal: number
+}
+```
+
+#### **useToast Hook** (`shared/hooks/useToast.js`)
+```javascript
+import { ToastContext } from '@/shared/context/toastContextValue';
+
+export const useToast = () => {
+    const context = useContext(ToastContext);
+    if (context === undefined || context === null) {
+        throw new Error('useToast must be used within a ToastProvider');
+    }
+    return context;
+};
+```
+**Purpose**: Safe accessor for toast notification context (separate from cart concerns)
+
+**Returns**:
+```javascript
+{
+  addToast: (message, type) => void    // Shows toast notification
 }
 ```
 
@@ -509,9 +530,10 @@ const handleFetch = () => refetch(false);
 ## 6. State Management
 
 ### Architecture Overview
-The frontend uses **React Context API** for centralized state management. Two main contexts handle the two core domains:
+The frontend uses **React Context API** for centralized state management. Three main contexts handle the core domains:
 1. **AuthContext** (`features/auth/context/authContextValue.js` + `AuthContext.jsx`) - Manages authentication state for both customers and admins
-2. **CartContext** (`features/cart/context/cartContextValue.js` + `CartContext.jsx`) - Manages shopping cart and toast notifications
+2. **CartContext** (`features/cart/context/cartContextValue.js` + `CartContext.jsx`) - Manages shopping cart
+3. **ToastContext** (`shared/context/toastContextValue.js` + `ToastContext.jsx`) - Manages toast notifications
 
 This approach allows components anywhere in the tree to access state without prop drilling, while keeping state co-located with business logic.
 
@@ -520,7 +542,8 @@ This approach allows components anywhere in the tree to access state without pro
 | Context | File | Purpose | Provided Values | Consumer Components |
 |---|---|---|---|---|
 | **AuthContext** | `features/auth/context/authContextValue.js` + `AuthContext.jsx` | Dual auth state (customer + admin), login/logout logic | `customer` (object/null), `admin` (object/null), `isAuthenticated`, `isAdminAuthenticated`, `login()`, `logout()` | useAuth hook → all pages, Navbar, protected routes |
-| **CartContext** | `features/cart/context/cartContextValue.js` + `CartContext.jsx` | Shopping cart items, cart operations, toast notifications | `cart` (array), `addToCart()`, `removeFromCart()`, `updateCartQty()`, `clearCart()`, `subtotal` (number), `addToast()`, `toasts` (array) | useCart hook → ProductCard, CartDrawer, Checkout, ProductDetails |
+| **CartContext** | `features/cart/context/cartContextValue.js` + `CartContext.jsx` | Shopping cart items and operations | `cart` (array), `addToCart()`, `removeFromCart()`, `updateCartQty()`, `clearCart()`, `subtotal` (number) | useCart hook → ProductCard, CartDrawer, Checkout, ProductDetails |
+| **ToastContext** | `shared/context/toastContextValue.js` + `ToastContext.jsx` | Toast notifications with auto-dismiss | `addToast()` | useToast hook → all pages needing user feedback |
 
 ### AuthContext Implementation Details
 
@@ -581,7 +604,7 @@ logout(role = 'all')                         // Clear user data and tokens
 - API interceptors use stored tokens for role-based requests
 - localStorage StorageEvent listener syncs auth changes across tabs
 
-### CartContext Implementation Details
+#### **CartContext Implementation Details**
 
 **Architecture**: To comply with React Fast Refresh requirements, context creation and provider components are separated:
 - `cartContextValue.js` - Exports `const CartContext = createContext()` only (not a component)
@@ -595,7 +618,6 @@ export const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   // State and logic
   const [cart, setCart] = useState([]);
-  const [toasts, setToasts] = useState([]);
   
   // ... initialization and methods
   
@@ -610,22 +632,21 @@ export { CartContext };  // Re-export for backward compatibility
 
 // Provided state and methods
 const [cart, setCart] = useState([])         // Array of { id, name, price, quantity, ... }
-const [toasts, setToasts] = useState([])     // Array of { id, message, type }
 
 // Provided functions
 addToCart(product, qty = 1)       // Add or increment product quantity
 removeFromCart(id)                 // Remove item completely
 updateCartQty(id, delta)           // Change quantity by delta (positive/negative)
 clearCart()                        // Empty entire cart
-addToast(message, type)            // Show notification (auto-dismisses in 3 seconds)
 subtotal                           // Computed: sum of (price × quantity) for all items
 ```
 
 **Features**:
 - **localStorage Persistence**: Cart saved to `bakery_cart` key, restored on page reload
-- **Toast Notifications**: Temporary messages with auto-dismiss after 3 seconds
 - **Quantity Constraints**: Prevents quantity from going below 1
 - **Error Handling**: localStorage parse failures don't crash app
+
+**Note**: Toast notifications are now handled by **ToastContext** (separate from CartContext). Use `useToast()` hook for displaying notifications. CartContext focuses exclusively on cart state and operations.
 
 #### **localStorage Usage**
 | Key | Type | Purpose | Persistence |
@@ -1536,7 +1557,7 @@ API.interceptors.response.use(
 
 **Usage in Components**:
 ```javascript
-const { addToast } = useCart();
+const { addToast } = useToast();
 
 try {
   await addProductToCart(product);
@@ -1565,6 +1586,7 @@ addToast('This will disappear after 3 seconds', 'info');
 **API Call Error Handling**:
 ```javascript
 const handleCheckout = async () => {
+  const { addToast } = useToast();
   try {
     setLoading(true);
     const response = await orderService.createOrder(orderData);
@@ -1584,6 +1606,7 @@ const handleCheckout = async () => {
 **Form Validation Errors**:
 ```javascript
 const handleSubmit = (e) => {
+  const { addToast } = useToast();
   e.preventDefault();
   
   // Validation
@@ -2216,6 +2239,145 @@ This internship has prepared you to:
 - **Build scalable systems** (feature-based architecture, separation of concerns)
 - **Communicate with backends** (API design, error handling, data contracts)
 - **Implement UI/UX best practices** (responsive design, accessibility, user feedback)
+
+---
+
+## 14. Utilities
+
+### Utility Files Overview
+
+| File | Location | Exports | Purpose |
+|---|---|---|---|
+| **imageUtils.js** | `shared/utils/imageUtils.js` | `getImageUrl()`, `PLACEHOLDER_IMAGE` | Image URL handling and fallback image constant |
+| **formatters.js** | `shared/utils/formatters.js` | `formatPrice()`, date/number formatters | Format values for display (currency, dates, etc.) |
+
+### imageUtils.js
+
+**Location**: `shared/utils/imageUtils.js`
+
+**Exports**:
+- `getImageUrl(imagePath)` - Function to construct image URL with fallback handling
+- `PLACEHOLDER_IMAGE` - Constant for default image when product image unavailable
+
+**Implementation**:
+```javascript
+const PLACEHOLDER_IMAGE = '🧁';  // Bakery emoji as fallback
+
+function getImageUrl(imagePath) {
+  // Returns proper image URL or fallback
+  if (!imagePath) return PLACEHOLDER_IMAGE;
+  
+  // If path already starts with http, return as-is
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // Construct full URL from relative path
+  return `${import.meta.env.VITE_API_URL}${imagePath}`;
+}
+
+export { getImageUrl, PLACEHOLDER_IMAGE };
+```
+
+**Usage Examples**:
+```javascript
+// In ProductCard.jsx
+import { getImageUrl, PLACEHOLDER_IMAGE } from '@/shared/utils/imageUtils';
+
+const ProductCard = ({ product }) => {
+  return (
+    <div>
+      <img src={getImageUrl(product.image)} />
+      {/* Shows product image if available, or emoji fallback if missing */}
+    </div>
+  );
+};
+
+// In OrdersManagement.jsx
+import { getImageUrl } from '@/shared/utils/imageUtils';
+
+const OrdersManagement = () => {
+  return (
+    <img src={getImageUrl(product.imagePath)} alt="Product" />
+  );
+};
+```
+
+**Usage in Components**:
+- `features/orders/pages/MyOrders.jsx` - Display order product images
+- `features/admin/pages/ProductsManagement.jsx` - Product table images
+- `features/admin/pages/EditProduct.jsx` - Product form image preview
+- `features/admin/pages/AddProduct.jsx` - New product image upload preview
+
+**Features**:
+- Handles both relative and absolute image URLs
+- Provides emoji fallback when image unavailable
+- Constructs full API URLs from relative paths
+- Prevents broken image links
+
+### formatters.js
+
+**Location**: `shared/utils/formatters.js`
+
+**Purpose**: Format values for display (currency, dates, percentages, numbers)
+
+**Exports**:
+- `formatPrice(amount)` - Format numbers as currency (e.g., 100 → "Rs 1,500")
+- `formatDate(date, options)` - Format dates for display (e.g., "28 Mar 2026")
+- `formatDeliveryFee(fee)` - Format delivery fees ("Free" if 0, otherwise currency format)
+
+**Implementation Details**:
+```javascript
+export const formatPrice = (amount) => {
+  if (amount === undefined || amount === null) return 'Rs 0';
+  return `Rs ${Number(amount).toLocaleString('en-IN')}`;
+};
+
+export const formatDate = (date, options = {}) => {
+  if (!date) return 'N/A';
+  try {
+    const dateObj = new Date(date);
+    const defaultOptions = { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      ...options
+    };
+    return new Intl.DateTimeFormat('en-IN', defaultOptions).format(dateObj);
+  } catch {  // Error handling without unused variable
+    return 'Invalid Date';
+  }
+};
+
+export const formatDeliveryFee = (fee) => {
+  if (fee === 0) return 'Free';
+  return formatPrice(fee);
+};
+```
+
+**Usage Examples**:
+```javascript
+import { formatPrice, formatDate, formatDeliveryFee } from '@/shared/utils/formatters';
+
+// Currency formatting
+formatPrice(1500)           // Returns "Rs 1,500"
+formatPrice(49.99)          // Returns "Rs 49.99"
+formatPrice(null)           // Returns "Rs 0"
+
+// Date formatting
+formatDate(new Date())      // Returns "28 Mar 2026"
+formatDate('2026-03-28')    // Returns "28 Mar 2026"
+formatDate(null)            // Returns "N/A"
+
+// Delivery fee formatting
+formatDeliveryFee(0)        // Returns "Free"
+formatDeliveryFee(100)      // Returns "Rs 100"
+```
+
+**Usage in Components**:
+- All product cards and order pages display prices using `formatPrice()`
+- Order history and checkout display dates using `formatDate()`
+- Cart and checkout calculate delivery fees with `formatDeliveryFee()`
 
 ---
 

@@ -18,7 +18,7 @@ import { useNavigate, Outlet } from 'react-router-dom';
 import api from '@/shared/services/api';
 import { useFetch } from '@/shared/hooks/useFetch';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useCart } from '@/features/cart/hooks/useCart';
+import { useToast } from '@/shared/hooks/useToast';
 import DeleteModal from '@/features/admin/components/DeleteModal';
 import AdminSidebar from './AdminSidebar';
 import CategoryModal from './CategoryModal';
@@ -30,7 +30,8 @@ const AdminLayout = () => {
 
     // Check admin session on component mount
     const { isAdminAuthenticated, logout } = useAuth();
-    const { addToast } = useCart();
+    // Get toast function from toast context
+    const { addToast } = useToast();
     
     useEffect(() => {
         if (!isAdminAuthenticated) {
@@ -65,12 +66,12 @@ const AdminLayout = () => {
     // State for filtering products by stock level
     const [stockFilter, setStockFilter] = useState('all');
 
-    // Fetch products from API with refetch capability
-    const { data: productsData, setData: setProducts, loading: productsLoading, error: productsError, refetch: refetchProducts } = useFetch('/products');
-    // Fetch orders from API with refetch capability
-    const { data: ordersData, setData: setOrders, loading: ordersLoading, error: ordersError, refetch: refetchOrders } = useFetch('/orders');
-    // Fetch categories from API with refetch capability
-    const { data: categoriesData, setData: setCategories, loading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useFetch('/categories');
+    // Fetch products from API with refetch capability - skip cache to ensure token validation
+    const { data: productsData, setData: setProducts, loading: productsLoading, error: productsError, refetch: refetchProducts } = useFetch('/products', { skipCache: true });
+    // Fetch orders from API with refetch capability - skip cache to ensure token validation
+    const { data: ordersData, setData: setOrders, loading: ordersLoading, error: ordersError, refetch: refetchOrders } = useFetch('/orders', { skipCache: true });
+    // Fetch categories from API with refetch capability - skip cache to ensure token validation
+    const { data: categoriesData, setData: setCategories, loading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useFetch('/categories', { skipCache: true });
 
 
     // Normalize data - ensure we have arrays
@@ -279,8 +280,8 @@ const AdminLayout = () => {
                             <AlertCircle size={20} />
                             <div>
                                 <p className="font-semibold">Error loading data</p>
-                                <p className="text-sm">{error}</p>
-                                {error.includes('401') && <p className="text-xs mt-1">Your session may have expired. Try logging in again.</p>}
+                                <p className="text-sm">{typeof error === 'string' ? error : error?.toString()}</p>
+                                {typeof error === 'string' && error.includes('401') && <p className="text-xs mt-1">Your session may have expired. Try logging in again.</p>}
                             </div>
                         </div>
                         <button

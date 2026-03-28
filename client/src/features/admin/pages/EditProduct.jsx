@@ -18,12 +18,13 @@ import { ArrowLeft, Save, Upload, XCircle, Loader2 } from 'lucide-react';
 import api from '@/shared/services/api';
 import { getImageUrl, PLACEHOLDER_IMAGE } from '@/shared/utils/imageUtils';
 import { useFetch } from '@/shared/hooks/useFetch';
-import toast from 'react-hot-toast';
+import { useToast } from '@/shared/hooks/useToast';
 
 const EditProduct = () => {
     // Get product ID from URL parameters
     const { id } = useParams();
     const navigate = useNavigate();
+    const { addToast } = useToast();
     // Get refetchProducts function from parent AdminLayout
     const { refetchProducts } = useOutletContext();
     // Track upload state
@@ -106,15 +107,13 @@ const EditProduct = () => {
             await api.put(`/products/${id}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            toast.success(`${name} updated successfully!`, {
-                style: { borderRadius: '16px', background: '#3d2b1f', color: '#fff' }
-            });
+            addToast(`${name} updated successfully!`, 'success');
             // Refresh products list in parent component
             await refetchProducts();
             // Redirect to products management page
             navigate('/admin/products');
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to update product');
+            addToast(err.response?.data?.message || 'Failed to update product', 'error');
         } finally {
             setUploading(false);
         }
@@ -149,7 +148,7 @@ const EditProduct = () => {
                 {productError && (
                     <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-2">
                         <XCircle size={20} />
-                        {productError}
+                        {typeof productError === 'string' ? productError : productError?.toString()}
                     </div>
                 )}
 

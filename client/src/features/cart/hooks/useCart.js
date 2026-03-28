@@ -11,7 +11,6 @@
  * - Update product quantities
  * - Clear entire cart
  * - Get subtotal
- * - Show toast notifications
  *
  * Usage:
  * const { cart, addToCart, removeFromCart, subtotal } = useCart();
@@ -23,8 +22,8 @@
  * - updateCartQty(id, delta): Function to change item quantity
  * - clearCart(): Function to empty the entire cart
  * - subtotal: Calculated total of all cart items (price × quantity)
- * - addToast(message, type): Function to show notification messages
- * - toasts: Array of active toast notifications
+ *
+ * Note: Toast notifications are managed by ToastContext, use useToast() hook instead
  */
 
 import { useContext } from 'react';

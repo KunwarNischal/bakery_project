@@ -4,9 +4,9 @@
  * This context provides cart functionality across the entire application:
  * - Manages shopping cart items and their quantities
  * - Persists cart data to browser localStorage
- * - Handles toast notifications for user feedback
  * - Calculates subtotal for checkout
  * - Provides functions to add, update, and remove items from cart
+ * - Note: Toast notifications are handled by separate ToastContext
  */
 
 import React, { useState, useEffect } from 'react';
@@ -32,23 +32,6 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('bakery_cart', JSON.stringify(cart));
   }, [cart]);
 
-  // Array to store temporary toast notifications
-  const [toasts, setToasts] = useState([]);
-
-  /**
-   * Add a toast notification that auto-dismisses after 3 seconds
-   * @param {string} message - The notification message to display
-   * @param {string} type - Type of notification: 'success' or 'error'
-   */
-  const addToast = (message, type = 'success') => {
-    // Generate unique ID for each toast
-    const id = Date.now();
-    // Add new toast to list
-    setToasts(prev => [...prev, { id, message, type }]);
-    // Auto-remove toast after 3 seconds
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
-  };
-
   /**
    * Add a product to the cart or increase its quantity if already in cart
    * @param {object} product - The product object to add
@@ -69,8 +52,6 @@ export const CartProvider = ({ children }) => {
       // If not exists, add as new item
       return [...prev, { ...product, quantity: qty }];
     });
-    // Show confirmation message
-    addToast(`${product.name} added to cart`);
   };
 
   /**
@@ -95,8 +76,6 @@ export const CartProvider = ({ children }) => {
    */
   const removeFromCart = (id) => {
     setCart(prev => prev.filter(item => item.id !== id));
-    // Show notification
-    addToast('Item removed');
   };
 
   /**
@@ -108,16 +87,12 @@ export const CartProvider = ({ children }) => {
   const value = {
     // Array of cart items
     cart,
-    // Array of active toast notifications
-    toasts,
     // Function to add items to cart
     addToCart,
     // Function to increase/decrease quantity
     updateCartQty,
     // Function to remove items from cart
     removeFromCart,
-    // Function to show notifications
-    addToast,
     // Function to empty the entire cart
     clearCart,
     // Calculated total price of all items in cart

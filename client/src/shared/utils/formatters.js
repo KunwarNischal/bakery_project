@@ -32,7 +32,7 @@ export const formatDate = (date, options = {}) => {
         };
         
         return new Intl.DateTimeFormat('en-IN', defaultOptions).format(dateObj);
-    } catch (error) {
+    } catch {
         return 'Invalid Date';
     }
 };

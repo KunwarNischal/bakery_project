@@ -14,12 +14,13 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import { User, Eye, EyeOff } from 'lucide-react';
+import { useToast } from '@/shared/hooks/useToast';
 import { registerCustomer } from '@/features/auth/services/authService';
 
 const CustomerRegister = () => {
     const navigate = useNavigate();
+    const { addToast } = useToast();
     // Toggle password visibility
     const [showPassword, setShowPassword] = useState(false);
     // Toggle confirm password visibility
@@ -106,16 +107,20 @@ const CustomerRegister = () => {
         setIsSubmitting(true);
         try {
             // Send registration request to server
-            await registerCustomer(formData.name, formData.email, formData.password);
+            await registerCustomer({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password
+            });
             // Dispatch event to update auth state throughout app
             window.dispatchEvent(new Event('authchange'));
-            toast.success('Account created! Welcome to Hatemalo!');
+            addToast('Account created Successfully. Please log in!', 'success');
             // Redirect to login page after successful registration
             navigate('/login');
         } catch (error) {
             const msg = error.response?.data?.message || error || 'Registration failed';
             setAuthError(msg);
-            toast.error(msg);
+            addToast(msg, 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -136,7 +141,7 @@ const CustomerRegister = () => {
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     {authError && (
                         <div className="bg-red-50 text-red-600 p-2 rounded-xl text-xs font-medium">
-                            {authError}
+                            {typeof authError === 'string' ? authError : authError?.toString()}
                         </div>
                     )}
 

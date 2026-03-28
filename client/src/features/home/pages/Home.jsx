@@ -23,9 +23,6 @@ const Home = () => {
   const { products } = useProducts();
   const { categories, loading: categoriesLoading } = useCategories();
   
-  // Quick link category select handler navigation is handled by Menu using URL state natively, or we can leave it
-  const onCategorySelect = undefined;
-  
   return (
     <div className="animate-fade-in-up">
       {/* Hero banner with bakery introduction */}
@@ -35,7 +32,6 @@ const Home = () => {
       <CategoryQuickLinks 
         categories={categories} 
         loading={categoriesLoading}
-        onCategorySelect={onCategorySelect} 
       />
 
       {/* Showcase of featured/popular products */}
