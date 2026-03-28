@@ -1,9 +1,7 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { STORAGE_KEYS } from '@/config/constants';
-
-// Create Context
-export const AuthContext = createContext(null);
+import { AuthContext } from './authContextValue';
 
 /**
  * Authentication Provider Component
@@ -44,6 +42,7 @@ export const AuthProvider = ({ children }) => {
                     }
                 }
             } catch (error) {
+                console.error("Failed to parse stored auth data:", error);
                 // Clear potentially corrupted data
                 localStorage.removeItem(STORAGE_KEYS.USER_INFO);
                 localStorage.removeItem(STORAGE_KEYS.ADMIN_INFO);
@@ -94,6 +93,7 @@ export const AuthProvider = ({ children }) => {
         const accessToken = userData.accessToken || token || userData.token;
         
         if (!accessToken) {
+            console.error('No access token provided to login function');
             return;
         }
 
@@ -102,10 +102,12 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, accessToken);
             setAdmin(userData);
             localStorage.setItem(STORAGE_KEYS.ADMIN_INFO, JSON.stringify(userData));
+            sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'admin');  // Track that admin is active for this tab
         } else {
             localStorage.setItem(STORAGE_KEYS.CUSTOMER_TOKEN, accessToken);
             setCustomer(userData);
             localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userData));
+            sessionStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'customer');  // Track that customer is active for this tab
         }
 
         // Dispatch custom event to sync other components potentially not wrapped in context
@@ -127,6 +129,11 @@ export const AuthProvider = ({ children }) => {
             setAdmin(null);
             localStorage.removeItem(STORAGE_KEYS.ADMIN_INFO);
             localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
+        }
+
+        // If logging out all roles, clear active role
+        if (role === 'all') {
+            sessionStorage.removeItem(STORAGE_KEYS.ACTIVE_ROLE);
         }
 
         window.dispatchEvent(new Event('authchange'));
@@ -180,5 +187,3 @@ export const AuthProvider = ({ children }) => {
 AuthProvider.propTypes = {
     children: PropTypes.node.isRequired,
 };
-
-export default AuthContext;
