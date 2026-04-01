@@ -1,16 +1,3 @@
-/**
- * Customer Login Page Component
- *
- * This page allows existing customers to log in to their accounts.
- * Features include:
- * - Email and password input fields
- * - Form validation (email format, password required)
- * - Show/hide password toggle
- * - Error messages for invalid credentials
- * - Redirect to registration page for new customers
- * - After login, user is sent to their orders page
- */
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Eye, EyeOff } from 'lucide-react';
@@ -22,24 +9,17 @@ const CustomerLogin = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const { login } = useAuth();
-    // State to toggle between showing and hiding password
     const [showPassword, setShowPassword] = useState(false);
 
-    // Form data for email and password inputs
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
-    // Track which fields have been interacted with (for validation)
     const [touched, setTouched] = useState({ email: false, password: false });
-    // Store validation error messages for each field
     const [formErrors, setFormErrors] = useState({ email: '', password: '' });
-    // Store authentication errors from server
     const [authError, setAuthError] = useState('');
-    // Track if login is being submitted to prevent double submissions
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Validate individual field based on field name and value
     const validate = (name, value) => {
         if (name === 'email') {
             if (!value) return 'Email is required';
@@ -51,7 +31,6 @@ const CustomerLogin = () => {
         return '';
     };
 
-    // Handle form input changes and validate if field has been touched
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -60,19 +39,16 @@ const CustomerLogin = () => {
         }
     };
 
-    // Mark field as touched and validate when user leaves the field
     const handleBlur = (e) => {
         const { name, value } = e.target;
         setTouched(prev => ({ ...prev, [name]: true }));
         setFormErrors(prev => ({ ...prev, [name]: validate(name, value) }));
     };
 
-    // Handle login form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setAuthError('');
 
-        // Validate both fields before submitting
         const emailErr = validate('email', formData.email);
         const passErr = validate('password', formData.password);
 

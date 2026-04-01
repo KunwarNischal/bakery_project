@@ -1,17 +1,3 @@
-/**
- * Customer Registration Page Component
- *
- * This page allows new customers to create an account.
- * Features include:
- * - Name, email, and password input fields
- * - Password confirmation field to prevent typos
- * - Form validation (name length, email format, password match)
- * - Show/hide password toggles for both password fields
- * - Error messages for validation issues
- * - Link to login page for existing customers
- * - After registration, user is sent to login page
- */
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Eye, EyeOff } from 'lucide-react';
@@ -21,28 +7,20 @@ import { registerCustomer } from '@/features/auth/services/authService';
 const CustomerRegister = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
-    // Toggle password visibility
     const [showPassword, setShowPassword] = useState(false);
-    // Toggle confirm password visibility
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    // Form data for registration
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
         confirmPassword: ''
     });
-    // Track which fields have been interacted with
     const [touched, setTouched] = useState({ name: false, email: false, password: false, confirmPassword: false });
-    // Store validation error messages
     const [formErrors, setFormErrors] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-    // Store server errors (e.g., email already exists)
     const [authError, setAuthError] = useState('');
-    // Track if registration is being submitted
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Validate individual field based on field name and value
     const validate = (name, value) => {
         if (name === 'name') {
             if (!value) return 'Name is required';
@@ -63,7 +41,6 @@ const CustomerRegister = () => {
         return '';
     };
 
-    // Handle form input changes and validate if field has been touched
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -71,13 +48,11 @@ const CustomerRegister = () => {
             setFormErrors(prev => ({
                 ...prev,
                 [name]: validate(name, value),
-                // If password changes, also revalidate confirm password
                 ...(name === 'password' && touched.confirmPassword ? { confirmPassword: validate('confirmPassword', formData.confirmPassword) } : {})
             }));
         }
     };
 
-    // Mark field as touched and validate when user leaves the field
     const handleBlur = (e) => {
         const { name, value } = e.target;
         setTouched(prev => ({ ...prev, [name]: true }));
@@ -87,12 +62,10 @@ const CustomerRegister = () => {
         }));
     };
 
-    // Handle registration form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setAuthError('');
 
-        // Validate all fields before submitting
         const nameErr = validate('name', formData.name);
         const emailErr = validate('email', formData.email);
         const passErr = validate('password', formData.password);
@@ -106,16 +79,13 @@ const CustomerRegister = () => {
 
         setIsSubmitting(true);
         try {
-            // Send registration request to server
             await registerCustomer({
                 name: formData.name,
                 email: formData.email,
                 password: formData.password
             });
-            // Dispatch event to update auth state throughout app
             window.dispatchEvent(new Event('authchange'));
             addToast('Account created Successfully. Please log in!', 'success');
-            // Redirect to login page after successful registration
             navigate('/login');
         } catch (error) {
             const msg = error.response?.data?.message || error || 'Registration failed';

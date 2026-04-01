@@ -1,16 +1,3 @@
-/**
- * Admin Login Page Component
- *
- * This is the secure login page for bakery administrators.
- * Features include:
- * - Email and password authentication
- * - Show/hide password toggle
- * - Form validation and error messages
- * - Verification that user is admin (not just regular customer)
- * - Redirect to admin dashboard after successful login
- * - Admin credentials stored in localStorage for session management
- */
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff } from 'lucide-react';
@@ -22,22 +9,15 @@ const AdminLogin = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const { login } = useAuth();
-    // State to toggle password visibility
     const [showPassword, setShowPassword] = useState(false);
-    // Store authentication error from server
     const [authError, setAuthError] = useState('');
-    // Track if login is being submitted
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Email and password input values
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    // Track which fields have been interacted with
     const [touched, setTouched] = useState({ email: false, password: false });
-    // Store validation error messages
     const [errors, setErrors] = useState({ email: '', password: '' });
 
-    // Validate individual field
     const validate = (name, value) => {
         if (name === 'email') {
             if (!value) return 'Email is required';
@@ -49,26 +29,22 @@ const AdminLogin = () => {
         return '';
     };
 
-    // Handle email input changes
     const handleEmailChange = (e) => {
         const val = e.target.value;
         setEmail(val);
         if (touched.email) setErrors(prev => ({ ...prev, email: validate('email', val) }));
     };
 
-    // Handle password input changes
     const handlePasswordChange = (e) => {
         const val = e.target.value;
         setPassword(val);
         if (touched.password) setErrors(prev => ({ ...prev, password: validate('password', val) }));
     };
 
-    // Handle login form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setAuthError('');
 
-        // Validate both fields before submitting
         const emailErr = validate('email', email);
         const passErr = validate('password', password);
 
@@ -80,19 +56,14 @@ const AdminLogin = () => {
 
         setIsSubmitting(true);
         try {
-            // Send login request to server
             const data = await loginAdmin(email, password);
 
-            // Check if user is an admin
             if (data.isAdmin) {
-                // Call context login - accepts both accessToken (new) and token (backward compat)
                 login(data, data.accessToken || data.token, 'admin');
 
                 addToast(`Welcome back, ${data.name}!`, 'success');
-                // Navigate to admin dashboard immediately
                 navigate('/admin/dashboard');
             } else {
-                // User exists but is not an admin
                 setAuthError('Not authorized as an admin');
                 addToast('Not authorized as an admin', 'error');
             }

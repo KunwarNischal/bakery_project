@@ -1,18 +1,6 @@
 import { useContext } from 'react';
 import { AuthContext } from '@/features/auth/context/authContextValue';
 
-/**
- * Custom hook to consume the AuthContext safely
- * 
- * @returns {Object} {
- *   customer,
- *   admin,
- *   isAuthenticated,
- *   isAdminAuthenticated,
- *   login,
- *   logout
- * }
- */
 export const useAuth = () => {
     const context = useContext(AuthContext);
 
