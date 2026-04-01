@@ -42,7 +42,7 @@ const AppRoutes = () => {
         <Route path="/register" element={<CustomerRegister />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         
-        {/* Admin Redirect - /admin should go to dashboard */}
+        {/* Admin Redirect */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         
         {/* Protected Customer Routes */}
