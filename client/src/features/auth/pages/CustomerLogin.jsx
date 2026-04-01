@@ -84,18 +84,13 @@ const CustomerLogin = () => {
 
         setIsSubmitting(true);
         try {
-            // Send login request to server
             const data = await loginCustomer(formData.email, formData.password);
-            
-            // Check if the user is actually an admin
             if (data.isAdmin === true) {
                 addToast('Admin accounts must use the admin login portal', 'error');
                 setAuthError('Admin accounts must use the admin login portal');
                 navigate('/admin/login');
                 return;
             }
-            
-            // Call context login - accepts both accessToken (new) and token (backward compat)
             login(data, data.accessToken || data.token, 'customer');
             
             addToast('Welcome back!', 'success');
